@@ -75,7 +75,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
                 end
             end
 
-            L_dur_counter = L_dur * dt_per_ms;
+            L_dur_counter = round(normrnd(L_dur, L_dur * 0.1) * dt_per_ms);
             L_counter = round(exprnd(L_avg_period * dt_per_ms)) + L_dur_counter;
             
             % fprintf('*** L *** t = %d l = %d \n', t, L_dur_counter);
@@ -108,8 +108,8 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
                 end
             end
 
-            H_dur_counter = H_dur * dt_per_ms;
-            H_counter = round(poissrnd(H_avg_period * dt_per_ms)) + H_dur_counter;        
+            H_dur_counter = round(normrnd(H_dur, H_dur * 0.1) * dt_per_ms);
+            H_counter = round(poissrnd(H_avg_period * dt_per_ms)) + H_dur_counter;
                         
             % fprintf('*** H *** t = %d l = %d \n', t, H_dur_counter);
         end
@@ -117,28 +117,18 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         % output vector
         out = out + (dt / tau_out) * (-out + out_spon + W * in);
         
-        % LR1: dWyx = y * (x - 0.4)
+        % LR-simple-thresholded: dWyx = y * (x - 0.4)
         dW = (dt / tau_w) * out * (in - 0.4)';
         
         % LR-BCM = dWyx = y * x * (y - theta)
         % dW = (dt / tau_w) * (out .* (out - theta)) * in';
+        % theta = theta + (dt / tau_theta) * (- theta + out .^ 2);
         
-        % LR2: dWyx = z * (y - 0.5) * (x - 0.5)
-        % types = out * ones(1, N_in) * 2 + ones(N_out, 1) * in';
-        % dW = zeros(size(types));
-        % dW(types == 3) = 1;
-        % dW(types == 2) = -1/2;
-        % dW(types == 1) = -1;
-        % dW = learn_rate * dW;
-
         % update weight matrix
         W = W + dW;
         W(W < 0) = 0;
         W(W > W_thres) = W_thres;
 
-        % update theta
-        theta = theta + (dt / tau_theta) * (- theta + out .^ 2);
-        
         % counter operations
         L_counter = L_counter - 1;
         H_counter = H_counter - 1;
@@ -168,12 +158,6 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
                 imagesc(W);
                 colorbar; caxis([0,0.2]);
                 getframe;
-                
-                if L_dur_counter > 0 || H_dur_counter > 0
-                    subplot(4, 6, [13,14]);
-                    histogram(out, 0:0.05:3);
-                    getframe;
-                end
             end
         end
     end
@@ -207,7 +191,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
     %% plot centers for first events
 
     subplot(4, 6, [5,6,11,12]);
-    max_t = 5000;
+    max_t = 50000;
     scatter(L_times(L_times < max_t) / dt_per_ms, L_centers(L_times < max_t), 'filled', 'r');
     title('location of centers in initial events');
     hold on;

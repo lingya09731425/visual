@@ -15,7 +15,7 @@ N_in = 50;
 N_out = 50;
 
 % time resolution
-total_ms = 1000;
+total_ms = 2000;
 dt_per_ms = 1000;
 
 % time constants
@@ -29,12 +29,12 @@ W_thres = 0.15;
 
 % parameters for events
 L_portion = 0.7; H_portion = 1 - L_portion;
-L_dur = 0.30; L_pct = [0.2 0.6];
-H_dur = 0.07; H_pct = [0.8 1.0];
+L_dur = 0.20; L_pct = [0.2 0.6];
+H_dur = 0.05; H_pct = [0.8 1.0];
 
 % if events are independent
 L_avg_period = 0.5;
-H_avg_period = 2;
+H_avg_period = 2.0;
 
 %% independent
 
