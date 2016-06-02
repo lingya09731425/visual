@@ -29,17 +29,22 @@ W_thres = 0.15;
 
 % parameters for events
 L_portion = 0.7; H_portion = 1 - L_portion;
-L_dur = 0.35; L_pct = [0.2 0.6];
+L_dur = 0.30; L_pct = [0.2 0.6];
 H_dur = 0.07; H_pct = [0.8 1.0];
 
 % if events are independent
-L_avg_period = 1;
-H_avg_period = 3;
+L_avg_period = 0.5;
+H_avg_period = 2;
 
 %% independent
 
-filename = sprintf('images/Jun1/independent_rates_Ld%d_Hd%d_Wthr%d_outthr%d_%s.png', ...
-    L_dur * 1000, H_dur * 1000, ...
+folder_name = sprintf('images/%s', datestr(now, 'mmmdd'));
+if ~exist(folder_name, 'dir')
+    mkdir(folder_name)
+end
+
+filename = sprintf('%s/independent_rates_Ld%d_Hd%d_Wthr%d_outthr%d_%s.png', ...
+    folder_name, L_dur * 1000, H_dur * 1000, ...
     W_thres * 100, out_thres * 100, ...
     datestr(now, 'HHMM'));
 

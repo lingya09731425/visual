@@ -29,9 +29,8 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
     % initialize counters
     L_counter = round(exprnd(L_avg_period * dt_per_ms)) + 1;
     H_counter = round(poissrnd(H_avg_period * dt_per_ms)) + 1;
-    L_dur_counter = []; H_dur_counter = 0;
+    L_dur_counter = 0; H_dur_counter = 0;
     record_counter = 1; L_start = 1;
-    current_L_ins = [];
 
     % record event centers and cortical-cells activation pct
     L_centers = []; H_centers = [];
@@ -55,9 +54,8 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
                 L_start = randsample(N_in, 1);
             end    
 
-            in_add = zeros(N_in, 1);
-            in_add(mod(L_start : L_start + L_length - 1, N_in) + 1) = 1;
-            in = in + in_add;
+            in = zeros(N_in, 1);
+            in(mod(L_start : L_start + L_length - 1, N_in) + 1) = 1;
 
             center = mod(L_start + round(L_length / 2), N_in);
             L_centers = [L_centers center];
@@ -77,10 +75,9 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
                 end
             end
 
-            L_counter = round(exprnd(L_avg_period * dt_per_ms)) + 1;
-            L_dur_counter = [L_dur_counter L_dur * dt_per_ms];
-            % L_dur_counter
-            current_L_ins = [current_L_ins in_add];
+            L_dur_counter = L_dur * dt_per_ms;
+            L_counter = round(exprnd(L_avg_period * dt_per_ms)) + L_dur_counter;
+            
             % fprintf('*** L *** t = %d l = %d \n', t, L_dur_counter);
         end
 
@@ -111,8 +108,8 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
                 end
             end
 
-            H_counter = round(poissrnd(H_avg_period * dt_per_ms)) + 1;        
             H_dur_counter = H_dur * dt_per_ms;
+            H_counter = round(poissrnd(H_avg_period * dt_per_ms)) + H_dur_counter;        
                         
             % fprintf('*** H *** t = %d l = %d \n', t, H_dur_counter);
         end
@@ -148,12 +145,9 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         L_dur_counter = L_dur_counter -1;
         H_dur_counter = H_dur_counter -1;
         
-        if any(L_dur_counter == 0)
-            in = in - current_L_ins(:,L_dur_counter == 0);
-            current_L_ins = current_L_ins(:,L_dur_counter > 0);
-            L_dur_counter = L_dur_counter(L_dur_counter > 0);
+        if L_dur_counter == 0
+            in = zeros(N_in, 1);
         end
-        
         if H_dur_counter == 0
             out_spon = zeros(N_out, 1);
         end
@@ -175,9 +169,11 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
                 colorbar; caxis([0,0.2]);
                 getframe;
                 
-                subplot(4, 6, [13,14]);
-                histogram(out, 0:0.05:3);
-                getframe;
+                if L_dur_counter > 0 || H_dur_counter > 0
+                    subplot(4, 6, [13,14]);
+                    histogram(out, 0:0.05:3);
+                    getframe;
+                end
             end
         end
     end
