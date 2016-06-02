@@ -4,7 +4,7 @@ clear; close all;
 indp = true;
 
 % randomness
-biased_W = true; bias = 0.015;
+biased_W = true; bias = 0.02;
 random_L_events = true;
 
 % plot each step
