@@ -3,8 +3,8 @@ function W = biased_weights(N_in, bias)
 
     for i = 0 : N_in - 1
         for j = 1 : N_in - i
-            W(j,j+i) = (~ i == 0) * normpdf(i, 0, 2);
-            W(j+i,j) = (~ i == 0) * normpdf(i, 0, 2);
+            W(j,j+i) = normpdf(i, 0, 2);
+            W(j+i,j) = normpdf(i, 0, 2);
         end
     end
 
