@@ -75,8 +75,9 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
                 end
             end
 
-            L_counter = round(exprnd(L_avg_period * dt_per_ms)) + 1;
             L_dur_counter = L_dur * dt_per_ms;
+            L_counter = round(exprnd(L_avg_period * dt_per_ms)) + L_dur_counter;
+            
             % fprintf('*** L *** t = %d l = %d \n', t, L_dur_counter);
         end
 
@@ -107,8 +108,8 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
                 end
             end
 
-            H_counter = round(poissrnd(H_avg_period * dt_per_ms)) + 1;        
             H_dur_counter = H_dur * dt_per_ms;
+            H_counter = round(poissrnd(H_avg_period * dt_per_ms)) + H_dur_counter;        
                         
             % fprintf('*** H *** t = %d l = %d \n', t, H_dur_counter);
         end
