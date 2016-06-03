@@ -1,6 +1,10 @@
-function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_ms, dt_per_ms, ...
-    out_thres, W_thres, L_avg_period, H_avg_period, L_dur, H_dur, L_pct, H_pct, ...
-    tau_w, tau_out, tau_theta, filename, plot_W_all)
+function independent_rates(biased_W, bias, random_L_events, ...
+    N_in, N_out, total_ms, dt_per_ms, ...
+    H_on, out_thres, W_thres, ...
+    L_avg_period, H_avg_period, ...
+    L_dur, H_dur, L_pct, H_pct, ...
+    tau_w, tau_out, tau_theta, ...
+    filename, plot_W_all)
 
     plot_W_freq = 5;
     record_W = true;
@@ -28,7 +32,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
 
     % initialize counters
     L_counter = round(exprnd(L_avg_period * dt_per_ms)) + 1;
-    H_counter = round(poissrnd(H_avg_period * dt_per_ms)) + 1;
+    H_counter = H_on * (round(poissrnd(H_avg_period * dt_per_ms)) + 1) + (~H_on) * (-1);
     L_dur_counter = 0; H_dur_counter = 0;
     record_counter = 1; L_start = 1;
 
@@ -86,9 +90,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
             H_start = randsample(N_out, 1);
             
             out_spon = zeros(N_out, 1);
-            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(2, 0.5, H_length,1);
-            % out_spon = out_spon .* theta;
-            % out_spon = ones(N_out,1) + theta / max(theta);
+            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(3, 0.5, H_length,1);
             
             center = mod(H_start + round(H_length / 2), N_out);
             H_centers = [H_centers center];
@@ -118,9 +120,12 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         out = out + (dt / tau_out) * (-out + out_spon + W * in);
         
         % LR-simple-thresholded: dWyx = y * (x - 0.4)
-        dW = (dt / tau_w) * out * (in - 0.4)';
+        % dW = (dt / tau_w) * out * (in - 0.4)';
         
-        % LR-BCM = dWyx = y * x * (y - theta)
+        % LR-Oja's: dWyx = y * (x - y * w)
+        dW = (dt / tau_w) * (out * ones(1, N_in)) .* (ones(N_out, 1) * in' - 5 * (out * ones(1, N_in)) .* W);
+        
+        % LR-BCM: dWyx = y * x * (y - theta)
         % dW = (dt / tau_w) * (out .* (out - theta)) * in';
         % theta = theta + (dt / tau_theta) * (- theta + out .^ 2);
         
