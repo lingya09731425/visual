@@ -11,12 +11,6 @@ function W = biased_weights(N_in, bias)
     W = W / normpdf(0, 0, 2);
     W = bias * W + rand(N_in) / 20 - mean(mean(bias * W));
     W(W < 0) = 0;
-    
-%     figure;
-%     colormap('hot');
-%     imagesc(W);
-%     colorbar; caxis([0,0.2]);
-%     getframe;
 end
 
 

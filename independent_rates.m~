@@ -40,7 +40,7 @@ function W = independent_rates(biased_W, bias, random_L_events, N_in, N_out, tot
     % after this time, assume selectivity is at equilibrium
     equi_t = 0.5 * total_ms * dt_per_ms;
         
-    % clear figure handle
+    % set current figure handle
     clf(fig_handle);
 
     for t = 1 : total_ms * dt_per_ms
@@ -151,8 +151,7 @@ function W = independent_rates(biased_W, bias, random_L_events, N_in, N_out, tot
             avg(record_counter) = mean(mean(W));
             W_all(:,:,record_counter) = W;
 
-            figure(fig_handle);
-            subplot(4, 6, [1,2,7,8]);
+            figure(figure_handle); subplot(4, 6, [1,2,7,8]);
             colormap('hot');
             imagesc(W);
             colorbar; caxis([0,0.2]);
@@ -162,15 +161,14 @@ function W = independent_rates(biased_W, bias, random_L_events, N_in, N_out, tot
 
     %% plot end result
 
-    figure(fig_handle);
-    subplot(4, 6, [1,2,7,8]);
+    figure(figure_handle); subplot(4, 6, [1,2,7,8]);
     colormap('hot');
     imagesc(W);
     colorbar; caxis([0,0.2]);
 
     %% plot histogram for cortical cell activation
 
-    subplot(4, 6, [3,4]);
+    figure(figure_handle); subplot(4, 6, [3,4]);
     histogram(H_active_pct / N_out, 0:0.04:1);
     title('percent of cortical cells activated by events');
     hold on;
@@ -180,7 +178,7 @@ function W = independent_rates(biased_W, bias, random_L_events, N_in, N_out, tot
     
    %% average firing rate of activated cells
    
-    subplot(4, 6, [9,10]);
+    figure(figure_handle); subplot(4, 6, [9,10]);
     histogram(H_active_rate, 0:0.05:3);
     title('average firing rate of activated cortical cells');
     hold on;
@@ -189,7 +187,7 @@ function W = independent_rates(biased_W, bias, random_L_events, N_in, N_out, tot
 
     %% plot centers for first events
 
-    subplot(4, 6, [5,6,11,12]);
+    figure(figure_handle); subplot(4, 6, [5,6,11,12]);
     max_t = 50000;
     scatter(L_times(L_times < max_t) / dt_per_ms, L_centers(L_times < max_t), 'filled', 'r');
     title('location of centers in initial events');

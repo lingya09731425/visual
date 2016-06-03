@@ -15,7 +15,7 @@ N_in = 50;
 N_out = 50;
 
 % time resolution
-total_ms = 2000;
+total_ms = 100;
 dt_per_ms = 1000;
 
 % time constants
@@ -38,18 +38,18 @@ H_dur = 0.05; H_pct = [0.8 1.0];
 
 %% independent
 
-folder_name = sprintf('images/%s/vary_Lp_Hp_%s', datestr(now, 'mmmdd'), datestr(now, 'HHMM'));
+folder_name = sprintf('images/%s', datestr(now, 'mmmdd'));
 if ~exist(folder_name, 'dir')
     mkdir(folder_name)
 end
+
+plot_num = 0;
 
 L_p_vals = [0.1 0.3 0.5 0.7 0.9];
 H_p_vals = [0.5 1.0 1.5 2.0 2.5 3.0];
 
 summ = figure;
 individual = figure;
-
-plot_num = 0;
 
 for L_p = L_p_vals
     for H_p = H_p_vals
@@ -74,13 +74,15 @@ for L_p = L_p_vals
         subplot(length(L_p_vals), length(H_p_vals), plot_num);
         colormap('hot');
         imagesc(W);
-        title(sprintf('L_{period} = %.1f H_{period} = %.1f', L_p, H_p));
         caxis([0,0.2]); axis off;
     end
 end
 
-summ_filename = sprintf('%s/summary_Lp_Hp.png', folder_name);
+summ_filename = sprintf('%s/independent_rates_Lp%d_Hp%d_Wthr%d_outthr%d_%s.png', ...
+    folder_name, L_p * 10, H_p * 10, ...
+    W_thres * 100, out_thres * 100, ...
+    datestr(now, 'HHMM'));
 figure(summ);
-export_fig(summ_filename);
+export_fig(filename);
 
 
