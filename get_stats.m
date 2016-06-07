@@ -1,5 +1,5 @@
 subliminal = 'images/subliminal';
-folder_name = sprintf('%s/correlation_0.6', subliminal);
+folder_name = sprintf('%s/correlation_0.4', subliminal);
 
 N_in = 50; N_out = 50;
 

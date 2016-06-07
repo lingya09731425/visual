@@ -1,5 +1,5 @@
 function W = independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_ms, dt_per_ms, ...
-    out_thres, W_thres, L_avg_period, H_avg_period, L_dur, H_dur, L_pct, H_pct, ...
+    out_thres, W_thres, corr_thres, L_avg_period, H_avg_period, L_dur, H_dur, L_pct, H_pct, ...
     tau_w, tau_out, tau_theta, filename, fig_handle, plot_prog)
 
     plot_W_freq = 5;
@@ -125,8 +125,8 @@ function W = independent_rates(biased_W, bias, random_L_events, N_in, N_out, tot
         out = out + (dt / tau_out) * (-out + out_spon + W * in);
         out_all(:,record_counter) = out_all(:,record_counter) + W * in;
         
-        % LR-simple-thresholded: dWyx = y * (x - 0.4)
-        dW = (dt / tau_w) * out * (in - 0.4)';
+        % LR-simple-thresholded: dWyx = y * (x - thres)
+        dW = (dt / tau_w) * out * (in - corr_thres)';
         
         % LR-BCM = dWyx = y * x * (y - theta)
         % dW = (dt / tau_w) * (out .* (out - theta)) * in';
