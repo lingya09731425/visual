@@ -35,11 +35,11 @@ for i = 1 : length(L_p_vals)
             
             % a synapse is active iff (the weight is > 0.02 or both its
             % neighbors are active            
-            active_weights = W > 0.02;
+            active_weights = W > 0.075;
             active_weights = active_weights | (active_weights(:,[N_in 1:(N_in - 1)]) & active_weights(:,[2:N_in 1]));
             
             % a cortical cell is active iff > 7 synapses are active
-            active_cortical = sum(active_weights, 2) > 7; 
+            active_cortical = sum(active_weights, 2) > 7;
             sparsity(t) = sum(active_cortical) / N_out * 100;
             
             % continue with stats if > 5 cortical cells are active
