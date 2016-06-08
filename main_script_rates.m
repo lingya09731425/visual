@@ -15,18 +15,18 @@ N_in = 50;
 N_out = 50;
 
 % time resolution
-total_ms = 2000;
+total_ms = 4000;
 dt_per_ms = 1000;
 
 % time constants
-tau_w = 250;
+tau_w = 500;
 tau_out = 0.01;
 tau_theta = 0.5;
 
 % thresholds
 out_thres = 0.5;
-W_thres = 0.15;
-corr_thres = 0.5;
+W_thres = 0.20;
+corr_thres = 0.4;
 
 % parameters for events
 L_portion = 0.7; H_portion = 1 - L_portion;
@@ -36,7 +36,7 @@ H_dur = 0.05; H_pct = [0.8 1.0];
 
 %% independent
 
-folder_name = sprintf('images/%s/vary_Lp_Hp_10runs_%s', datestr(now, 'mmmdd'), datestr(now, 'HHMM'));
+folder_name = sprintf('images/%s/bcm_vary_Lp_Hp_10runs_%s', datestr(now, 'mmmdd'), datestr(now, 'HHMM'));
 if ~exist(folder_name, 'dir')
     mkdir(folder_name)
 end
