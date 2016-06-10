@@ -13,6 +13,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
 
     % initialize weights
     W = biased_W * biased_weights(N_in, bias) + (~biased_W) * (rand(N_out, N_in) / 20);
+    W = W * 2;
     
     avg(1) = mean(mean(W));
     if record_W
@@ -46,6 +47,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
     for t = 1 : total_ms * dt_per_ms
 
         if L_counter == 0
+            
             L_length = 20;
             L_start = mod(L_start + 10, N_out);
 
@@ -56,6 +58,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
 
             in = zeros(N_in, 1);
             in(mod(L_start : L_start + L_length - 1, N_in) + 1) = 1;
+            out_spon = zeros(N_out, 1);
 
             center = mod(L_start + round(L_length / 2), N_in);
             L_centers = [L_centers center];
@@ -82,12 +85,14 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         end
 
         if H_counter == 0
+            
             H_length = round(N_out * (H_pct(1) + rand(1) * (H_pct(2) - H_pct(1))));
             H_start = randsample(N_out, 1);
             
+            in = zeros(N_in, 1);
             out_spon = zeros(N_out, 1);
-            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(2, 0.5, H_length,1);
-            % out_spon = out_spon .* theta;
+            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = 1; % normrnd(3, 0.5, H_length,1);
+            out_spon = out_spon .* theta;
             % out_spon = ones(N_out,1) + theta / max(theta);
             
             center = mod(H_start + round(H_length / 2), N_out);
@@ -117,8 +122,9 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         % output vector
         out = out + (dt / tau_out) * (-out + out_spon + W * in);
         
-        % LR-simple-thresholded: dWyx = y * (x - 0.4)
-        dW = (dt / tau_w) * out * (in - 0.4)';
+        % LR-simple-thresholded: dWyx = y * (x - thres)
+        dW = (dt / tau_w) * out * (in - 0.5)';
+        theta = theta + (dt / tau_theta) * (- theta + out .^ 2 / 0.2);
         
         % LR-BCM = dWyx = y * x * (y - theta)
         % dW = (dt / tau_w) * (out .* (out - theta)) * in';
@@ -145,7 +151,8 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         % record W
         if mod(t, plot_W_freq * dt_per_ms) == 0         
             record_counter = record_counter + 1;
-            fprintf('completion %.2f %% \n', t / (total_ms * dt_per_ms) * 100); 
+            fprintf('completion %.2f %% \n', t / (total_ms * dt_per_ms) * 100);
+            theta'
             
             avg(record_counter) = mean(mean(W));
             if record_W
@@ -182,10 +189,10 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
    %% average firing rate of activated cells
    
     subplot(4, 6, [9,10]);
-    histogram(H_active_rate, 0:0.05:3);
+    histogram(H_active_rate, 0:0.05:10);
     title('average firing rate of activated cortical cells');
     hold on;
-    histogram(L_active_rate, 0:0.05:3);
+    histogram(L_active_rate, 0:0.05:10);
     legend('H', 'L');
 
     %% plot centers for first events
@@ -204,7 +211,8 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         for i = 1 : 4
             subplot(4, 6, 14 + i);
             plot(reshape(W_all(10 * i,:,:), N_in, size(W_all, 3))');
-            ylim([0,0.25]); xlim([0,total_ms / plot_W_freq]);
+            % ylim([0,0.25]);
+            xlim([0,total_ms / plot_W_freq]);
             title(sprintf('all synapses to CORTICAL cell #%d', 10 * i));
         end
     end
@@ -215,7 +223,8 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         for i = 1 : 4
             subplot(4, 6, 20 + i);
             plot(reshape(W_all(:, 10 * i,:), N_in, size(W_all, 3))');
-            ylim([0,0.25]); xlim([0,total_ms / plot_W_freq]);
+            % ylim([0,0.25]);
+            xlim([0,total_ms / plot_W_freq]);
             title(sprintf('all synapses from RETINAL cell #%d', 10 * i));
         end
     end

@@ -4,7 +4,7 @@ clear; close all;
 indp = true;
 
 % randomness
-biased_W = true; bias = 0.02;
+biased_W = true; bias = 0.020;
 random_L_events = true;
 
 % plot each step
@@ -15,26 +15,23 @@ N_in = 50;
 N_out = 50;
 
 % time resolution
-total_ms = 2000;
+total_ms = 5000;
 dt_per_ms = 1000;
 
 % time constants
-tau_w = 250;
+tau_w = 50;
 tau_out = 0.01;
-tau_theta = 0.5;
+tau_theta = 10;
 
 % thresholds and learn rate
-out_thres = 0.5;
-W_thres = 0.15;
+out_thres = 0.05;
+W_thres = Inf;
 
 % parameters for events
-L_portion = 0.7; H_portion = 1 - L_portion;
-L_dur = 0.20; L_pct = [0.2 0.6];
-H_dur = 0.05; H_pct = [0.8 1.0];
-
-% if events are independent
-L_avg_period = 0.5;
-H_avg_period = 2.0;
+L_dur = 0.2; L_pct = [0.2 0.6];
+H_dur = 0.2; H_pct = [1.0 1.0];
+L_avg_period = 2;
+H_avg_period = 2;
 
 %% independent
 
