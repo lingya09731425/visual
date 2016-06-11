@@ -13,7 +13,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
 
     % initialize weights
     W = biased_W * biased_weights(N_in, bias) + (~biased_W) * (rand(N_out, N_in) / 20);
-    W = W * 2;
+    % W = W * 2;
     
     avg(1) = mean(mean(W));
     if record_W
@@ -58,7 +58,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
 
             in = zeros(N_in, 1);
             in(mod(L_start : L_start + L_length - 1, N_in) + 1) = 1;
-            out_spon = zeros(N_out, 1);
+            % out_spon = zeros(N_out, 1);
 
             center = mod(L_start + round(L_length / 2), N_in);
             L_centers = [L_centers center];
@@ -89,11 +89,10 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
             H_length = round(N_out * (H_pct(1) + rand(1) * (H_pct(2) - H_pct(1))));
             H_start = randsample(N_out, 1);
             
-            in = zeros(N_in, 1);
+            % in = zeros(N_in, 1);
             out_spon = zeros(N_out, 1);
-            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = 1; % normrnd(3, 0.5, H_length,1);
+            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(10, 0.1, H_length,1);
             out_spon = out_spon .* theta;
-            % out_spon = ones(N_out,1) + theta / max(theta);
             
             center = mod(H_start + round(H_length / 2), N_out);
             H_centers = [H_centers center];
@@ -124,12 +123,8 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         
         % LR-simple-thresholded: dWyx = y * (x - thres)
         dW = (dt / tau_w) * out * (in - 0.5)';
-        theta = theta + (dt / tau_theta) * (- theta + out .^ 2 / 0.2);
-        
-        % LR-BCM = dWyx = y * x * (y - theta)
-        % dW = (dt / tau_w) * (out .* (out - theta)) * in';
-        % theta = theta + (dt / tau_theta) * (- theta + out .^ 2);
-        
+        theta = theta + (dt / tau_theta) * (- theta + out .^ 2);
+                
         % update weight matrix
         W = W + dW;
         W(W < 0) = 0;
@@ -189,10 +184,10 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
    %% average firing rate of activated cells
    
     subplot(4, 6, [9,10]);
-    histogram(H_active_rate, 0:0.05:10);
+    histogram(H_active_rate, 0:0.05:4);
     title('average firing rate of activated cortical cells');
     hold on;
-    histogram(L_active_rate, 0:0.05:10);
+    histogram(L_active_rate, 0:0.05:4);
     legend('H', 'L');
 
     %% plot centers for first events

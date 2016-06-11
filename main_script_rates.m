@@ -21,17 +21,17 @@ dt_per_ms = 1000;
 % time constants
 tau_w = 50;
 tau_out = 0.01;
-tau_theta = 10;
+tau_theta = 100;
 
 % thresholds and learn rate
 out_thres = 0.05;
-W_thres = Inf;
+W_thres = 0.4;
 
 % parameters for events
 L_dur = 0.2; L_pct = [0.2 0.6];
 H_dur = 0.2; H_pct = [1.0 1.0];
-L_avg_period = 2;
-H_avg_period = 2;
+L_avg_period = 3.0;
+H_avg_period = 3.0;
 
 %% independent
 
