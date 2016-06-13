@@ -24,8 +24,9 @@ tau_out = 0.01;
 tau_theta = 0.5;
 
 % thresholds and learn rate
-out_thres = 0.5;
-W_thres = 0.20;
+out_thres = 0.05;
+W_thres = 0.4;
+corr_thres = 0.4;
 
 % parameters for events
 L_portion = 0.7; H_portion = 1 - L_portion;
@@ -34,7 +35,7 @@ H_dur = 0.05; H_pct = [0.8 1.0];
 
 % if events are independent
 L_avg_period = 0.3;
-H_avg_period = 4.0;
+H_avg_period = 3.0;
 
 %% independent
 
@@ -49,7 +50,8 @@ filename = sprintf('%s/bcm_Ld%d_Hd%d_Wthr%d_outthr%d_%s.png', ...
     datestr(now, 'HHMM'));
 
 independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_ms, dt_per_ms, ...
-    out_thres, W_thres, L_avg_period, H_avg_period, ...
+    out_thres, W_thres, corr_thres, ...
+    L_avg_period, H_avg_period, ...
     L_dur, H_dur, L_pct, H_pct, ...
     tau_w, tau_out, tau_theta, ...
     filename, plot_W_all)

@@ -1,5 +1,6 @@
 function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_ms, dt_per_ms, ...
-    out_thres, W_thres, L_avg_period, H_avg_period, L_dur, H_dur, L_pct, H_pct, ...
+    out_thres, W_thres, corr_thres, ...
+    L_avg_period, H_avg_period, L_dur, H_dur, L_pct, H_pct, ...
     tau_w, tau_out, tau_theta, filename, plot_W_all)
 
     plot_W_freq = 5;
@@ -118,12 +119,9 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         % output vector
         out = out + (dt / tau_out) * (-out + out_spon + W * in);
         
-        % LR-simple-thresholded: dWyx = y * (x - 0.4)
-        % dW = (dt / tau_w) * out * (in - 0.4)';
-        
         % LR-BCM = dWyx = y * x * (y - theta)
-        dW = (dt / tau_w) * (out .* (out - theta)) * (in - 0.4)';
-        fix = double(out < theta) * double(in < 0.4)';
+        dW = (dt / tau_w) * (out .* (out - theta)) * (in - corr_thres)';
+        fix = double(out < theta) * double(in < corr_thres)';
         dW = dW .* (1 - fix);
         theta = theta + (dt / tau_theta) * (- theta + out .^ 2);
         
@@ -159,7 +157,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
                 subplot(4, 6, [1,2,7,8]);
                 colormap('hot');
                 imagesc(W);
-                colorbar; caxis([0,W_thres * 1.2]);
+                colorbar; caxis([0,W_thres]);
                 getframe;
             end
         end
@@ -170,7 +168,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
     subplot(4, 6, [1,2,7,8]);
     colormap('hot');
     imagesc(W);
-    colorbar; caxis([0,W_thres * 1.2]);
+    colorbar; caxis([0,W_thres]);
 
     %% plot histogram for cortical cell activation
 
@@ -207,7 +205,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         for i = 1 : 4
             subplot(4, 6, 14 + i);
             plot(reshape(W_all(10 * i,:,:), N_in, size(W_all, 3))');
-            ylim([0,W_thres * 1.2]); xlim([0,total_ms / plot_W_freq]);
+            ylim([0,W_thres]); xlim([0,total_ms / plot_W_freq]);
             title(sprintf('all synapses to CORTICAL cell #%d', 10 * i));
         end
     end
@@ -218,7 +216,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         for i = 1 : 4
             subplot(4, 6, 20 + i);
             plot(reshape(W_all(:, 10 * i,:), N_in, size(W_all, 3))');
-            ylim([0,W_thres * 1.2]); xlim([0,total_ms / plot_W_freq]);
+            ylim([0,W_thres]); xlim([0,total_ms / plot_W_freq]);
             title(sprintf('all synapses from RETINAL cell #%d', 10 * i));
         end
     end
