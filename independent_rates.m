@@ -1,5 +1,6 @@
 function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_ms, dt_per_ms, ...
-    out_thres, W_thres, L_avg_period, H_avg_period, L_dur, H_dur, L_pct, H_pct, ...
+    out_thres, W_thres, corr_thres, ...
+    L_avg_period, H_avg_period, L_dur, H_dur, L_pct, H_pct, ...
     tau_w, tau_out, tau_theta, filename, plot_W_all)
 
     plot_W_freq = 5;
@@ -58,7 +59,6 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
 
             in = zeros(N_in, 1);
             in(mod(L_start : L_start + L_length - 1, N_in) + 1) = 1;
-            % out_spon = zeros(N_out, 1);
 
             center = mod(L_start + round(L_length / 2), N_in);
             L_centers = [L_centers center];
@@ -89,7 +89,6 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
             H_length = round(N_out * (H_pct(1) + rand(1) * (H_pct(2) - H_pct(1))));
             H_start = randsample(N_out, 1);
             
-            % in = zeros(N_in, 1);
             out_spon = zeros(N_out, 1);
             out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(10, 0.1, H_length,1);
             out_spon = out_spon .* theta;
@@ -122,7 +121,7 @@ function independent_rates(biased_W, bias, random_L_events, N_in, N_out, total_m
         out = out + (dt / tau_out) * (-out + out_spon + W * in);
         
         % LR-simple-thresholded: dWyx = y * (x - thres)
-        dW = (dt / tau_w) * out * (in - 0.5)';
+        dW = (dt / tau_w) * out * (in - corr_thres)';
         theta = theta + (dt / tau_theta) * (- theta + out .^ 2);
                 
         % update weight matrix
