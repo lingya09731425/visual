@@ -1,9 +1,18 @@
 function W = independent_rates( ...
-    type_id, ...
+    type, ...
     bias, N_in, N_out, total_ms, dt_per_ms, ...
     out_thres, W_thres, corr_thres, ...
     L_avg_period, H_avg_period, L_dur, H_dur, L_pct, H_pct, ...
     tau_w, tau_out, tau_theta)
+
+    switch type
+        case 'corr'
+            type_id = 0;
+        case 'bcm'
+            type_id = 1;
+        case 'adapt'
+            type_id = 2;
+    end
 
     dt = 1 / dt_per_ms;
 
