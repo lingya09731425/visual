@@ -1,14 +1,15 @@
 subliminal = 'images/subliminal';
-folder_name = sprintf('%s/correlation_0.4', subliminal);
+folder_name = sprintf('%s/bcm_0.4', subliminal);
 
 N_in = 50; N_out = 50;
 
-L_p = 0.5; H_p = 2;
+L_p = 0.5; H_p = 4;
 
 data_filename = sprintf('%s/weights_Lp%d_Hp%d.mat', folder_name, L_p * 10, H_p * 10);
 load(data_filename);
+num_of_trials = size(all_W, 3);
 
-for t = 1 : 10            
+for t = 1 : num_of_trials            
     subplot(2, 5, t);
     colormap('hot');
     imagesc(all_W(:,:,t));
@@ -17,7 +18,7 @@ end
 
 %%
 
-W = all_W(:,:,8);
+W = all_W(:,:,4);
 active_cortical = sum(W > 0.02, 2) > 7; 
 active_weights = W > 0.02;
 
