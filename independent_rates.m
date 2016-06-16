@@ -13,6 +13,8 @@ function W = independent_rates( ...
             type_id = 1;
         case 'adapt'
             type_id = 2;
+        otherwise
+            warning('unexpected type');
     end
 
     dt = 1 / dt_per_ms;
@@ -71,6 +73,9 @@ function W = independent_rates( ...
             
             out_spon = zeros(N_out, 1);
             out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(2, 0.5, H_length,1);
+            if type_id == 2 % adapt
+                out_spon = out_spon .* theta;
+            end
 
             H_dur_counter = round(normrnd(H_dur, H_dur * 0.1) * dt_per_ms);
             H_counter = round(poissrnd(H_avg_period * dt_per_ms)) + H_dur_counter;
@@ -108,7 +113,6 @@ function W = independent_rates( ...
         H_counter = H_counter - 1;
         L_dur_counter = L_dur_counter -1;
         H_dur_counter = H_dur_counter -1;
-        
         
         if L_dur_counter == 0
             in = zeros(N_in, 1);
