@@ -10,22 +10,22 @@ N_in = 50; N_out = 50;
 bias = 0.02;
 
 % time resolution
-total_ms = 10000;
+total_ms = 3000;
 dt_per_ms = 1000;
 
 % time constants
 tau_w = 250;
 tau_out = 0.01;
-tau_theta = 0.5;
+tau_theta = 0.50;
 
 % thresholds
 out_thres = 0.05;
-W_thres = 0.4;
+W_thres = [0 0.4]; bounded = true;
 corr_thres = 0.4;
 
 % parameters for events
-L_p = 3.5; L_dur = 0.20; L_pct = [0.2 0.6];
-H_p = 15.0; H_dur = 0.05; H_pct = [0.8 1.0];
+L_p = 1.5; L_dur = 0.20; L_pct = [0.2 0.6];
+H_p = Inf; H_dur = 0.20; H_pct = [0.8 1.0];
 
 % file naming
 folder_name = sprintf('images/%s', datestr(now, 'mmmdd'));
@@ -39,10 +39,18 @@ filename = sprintf('%s/%s_Ld%d_Hd%d_Lp%d_Hp%d_%s.png', ...
     L_p * 1000, H_p * 1000, ...
     datestr(now, 'HHMM'));
 
-independent_rates( ...
-    type, ...
-    bias, N_in, N_out, total_ms, dt_per_ms, ...
-    out_thres, W_thres, corr_thres, ...
-    L_p, H_p, L_dur, H_dur, L_pct, H_pct, ...
-    tau_w, tau_out, tau_theta, ...
-    filename);
+W_evo = independent_rates( ...
+            type, ...
+            bias, N_in, N_out, total_ms, dt_per_ms, ...
+            out_thres, W_thres, bounded, corr_thres, ...
+            L_p, H_p, L_dur, H_dur, L_pct, H_pct, ...
+            tau_w, tau_out, tau_theta, ...
+            filename);
+        
+phase;
+
+
+        
+        
+        
+        

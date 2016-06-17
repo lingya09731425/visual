@@ -1,7 +1,7 @@
-function W = independent_rates( ...
+function W_all = independent_rates( ...
     type, ...
     bias, N_in, N_out, total_ms, dt_per_ms, ...
-    out_thres, W_thres, corr_thres, ...
+    out_thres, W_thres, bounded, corr_thres, ...
     L_avg_period, H_avg_period, L_dur, H_dur, L_pct, H_pct, ...
     tau_w, tau_out, tau_theta, ...
     filename)
@@ -36,7 +36,7 @@ function W = independent_rates( ...
     record_counter = 1;
 
     % record events and weights
-    plot_W_freq = 100;
+    plot_W_freq = 50;
     L_active_pct = []; H_active_pct = [];
     L_active_rate = []; H_active_rate = [];
     
@@ -105,9 +105,11 @@ function W = independent_rates( ...
         
         % update weight matrix
         W = W + dW;
-        W(W < 0) = 0;
-        W(W > W_thres) = W_thres;
-
+        if bounded
+            W(W < W_thres(1)) = W_thres(1);
+            W(W > W_thres(2)) = W_thres(2);
+        end
+            
         % counter operations
         L_counter = L_counter - 1;
         H_counter = H_counter - 1;
@@ -132,7 +134,7 @@ function W = independent_rates( ...
             subplot(4, 6, [1,2,7,8]);
             colormap('hot');
             imagesc(W);
-            colorbar; caxis([0,W_thres]);
+            colorbar; caxis(W_thres);
             getframe;
         end
     end
@@ -141,7 +143,7 @@ function W = independent_rates( ...
     subplot(4, 6, [1,2,7,8]);
     colormap('hot');
     imagesc(W);
-    colorbar; caxis([0,W_thres]);
+    colorbar; caxis(W_thres);
 
     % plot histogram for cortical cell activation
     subplot(4, 6, [3,4]);
@@ -161,7 +163,7 @@ function W = independent_rates( ...
     for i = 1 : 4
         subplot(4, 6, 14 + i);
         plot(reshape(W_all(10 * i,:,:), N_in, size(W_all, 3))');
-        ylim([0,W_thres]); xlim([0,num_of_records]);
+        ylim(W_thres); xlim([0,num_of_records]);
         title(sprintf('all synapses to CORTICAL cell #%d', 10 * i));
     end
 
@@ -169,7 +171,7 @@ function W = independent_rates( ...
     for i = 1 : 4
         subplot(4, 6, 20 + i);
         plot(reshape(W_all(:, 10 * i,:), N_in, size(W_all, 3))');
-        ylim([0,W_thres]); xlim([0,num_of_records]);
+        ylim(W_thres); xlim([0,num_of_records]);
         title(sprintf('all synapses from RETINAL cell #%d', 10 * i));
     end
 
@@ -194,7 +196,7 @@ function W = independent_rates( ...
     text(0.1, 0.3, sprintf('tau out = %.2f', tau_out));
     text(0.1, 0.2, sprintf('tau theta = %.2f', tau_theta));
     
-    text(0.5, 0.4, sprintf('W thres = %.2f', W_thres));
+    text(0.5, 0.4, sprintf('W thres = %.2f - %.2f', W_thres(1), W_thres(2)));
     text(0.5, 0.3, sprintf('out thres = %.2f', out_thres));
     text(0.5, 0.2, sprintf('corr thres = %.2f', corr_thres));
     
