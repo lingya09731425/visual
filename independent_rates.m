@@ -13,6 +13,8 @@ function W_all = independent_rates( ...
             type_id = 1;
         case 'adapt'
             type_id = 2;
+        case 'oja'
+            type_id = 3;
         otherwise
             warning('unexpected type');
     end
@@ -101,10 +103,16 @@ function W_all = independent_rates( ...
             case 2 % adapt
                 dW = (dt / tau_w) * out * (in - corr_thres)';                                                                                                                       
                 theta = theta + (dt / tau_theta) * (- theta + out .^ 2);
+                
+            case 3 % oja
+                dW = (dt / tau_w) * (out * ones(1, N_in)) .* (ones(N_out, 1) * in' ...
+                    - (out * ones(1, N_in)) .* W);
         end
         
         % update weight matrix
         W = W + dW;
+        % W = W ./ (sqrt(sum(W .^ 2, 2)) * ones(1, N_in));
+        
         if bounded
             W(W < W_thres(1)) = W_thres(1);
             W(W > W_thres(2)) = W_thres(2);

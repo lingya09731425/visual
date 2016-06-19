@@ -5,7 +5,7 @@ w_down = NaN(50, num_records);
 
 cov = csvread('cov');
 u = 0.04730429;
-[V,~] = eigs(cov + u * (u - corr_thres), 2);
+[V,~] = eigs(cov + u * (u - corr_thres), 5);
 
 c1 = W_evo(:,:,1) * V(:,1);
 c2 = W_evo(:,:,1) * V(:,2);
@@ -31,4 +31,8 @@ end
 plot(get(gca,'xlim'), [0 0]);
 plot([0 0], get(gca,'ylim'));
 plot([-1 1], [-1 1]);
+
+
+bar_width = sum(W_evo(:,:,num_records) > 0.15, 2);
+mean(bar_width(bar_width > 5))
 

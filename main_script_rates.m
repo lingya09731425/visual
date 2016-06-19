@@ -1,7 +1,7 @@
 clear; close all;
 
-% LR type
-type = 'corr';
+% LR type: corr, bcm, adapt, oja
+type = 'oja';
 
 % number of cells
 N_in = 50; N_out = 50;
@@ -20,12 +20,12 @@ tau_theta = 0.50;
 
 % thresholds
 out_thres = 0.05;
-W_thres = [0 0.4]; bounded = true;
+W_thres = [0.0 0.4]; bounded = false;
 corr_thres = 0.4;
 
 % parameters for events
 L_p = 1.5; L_dur = 0.20; L_pct = [0.2 0.6];
-H_p = Inf; H_dur = 0.20; H_pct = [0.8 1.0];
+H_p = 10; H_dur = 0.05; H_pct = [0.8 1.0];
 
 % file naming
 folder_name = sprintf('images/%s', datestr(now, 'mmmdd'));
@@ -46,11 +46,8 @@ W_evo = independent_rates( ...
             L_p, H_p, L_dur, H_dur, L_pct, H_pct, ...
             tau_w, tau_out, tau_theta, ...
             filename);
-        
-phase;
 
-
-        
+% phase;
         
         
         
