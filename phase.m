@@ -23,7 +23,8 @@ end
 
 figure;
 plot(w_up(1,:), w_down(1,:));
-xlim([-0.1 0.1]); ylim([-0.1 0.1]);
+plot_limit = 0.1;
+xlim([-plot_limit plot_limit]); ylim([-plot_limit plot_limit]);
 hold on;
 for i = 2 : 50
     plot(w_up(i,:), w_down(i,:));

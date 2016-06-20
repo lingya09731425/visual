@@ -2,7 +2,7 @@ function W_all = independent_rates( ...
     type, ...
     bias, N_in, N_out, total_ms, dt_per_ms, ...
     out_thres, W_thres, bounded, corr_thres, ...
-    L_avg_period, H_avg_period, L_dur, H_dur, L_pct, H_pct, ...
+    L_p, H_p, L_dur, H_dur, L_pct, H_pct, H_rate, ...
     tau_w, tau_out, tau_theta, ...
     filename)
 
@@ -31,9 +31,9 @@ function W_all = independent_rates( ...
     theta = zeros(N_out, 1);
 
     % initialize counters
-    L_counter = round(exprnd(L_avg_period * dt_per_ms)) + 1;
-    H_counter = isinf(H_avg_period) * (-1) + ...
-        ~isinf(H_avg_period) * (round(poissrnd(H_avg_period * dt_per_ms)) + 1);
+    L_counter = round(exprnd(L_p * dt_per_ms)) + 1;
+    H_counter = isinf(H_p) * (-1) + ...
+        ~isinf(H_p) * (round(poissrnd(H_p * dt_per_ms)) + 1);
     L_dur_counter = 0; H_dur_counter = 0;
     record_counter = 1;
 
@@ -62,10 +62,10 @@ function W_all = independent_rates( ...
             in(mod(L_start : L_start + L_length - 1, N_in) + 1) = 1;
 
             L_dur_counter = round(normrnd(L_dur, L_dur * 0.1) * dt_per_ms);
-            L_counter = round(exprnd(L_avg_period * dt_per_ms)) + L_dur_counter;
+            L_counter = round(exprnd(L_p * dt_per_ms)) + L_dur_counter;
             
             if t > equi_t
-                record_event(W, in, out_spon);
+                record_event(W, in, out_spon, true);
             end
         end
 
@@ -74,16 +74,16 @@ function W_all = independent_rates( ...
             H_start = randsample(N_out, 1);
             
             out_spon = zeros(N_out, 1);
-            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(2, 0.5, H_length,1);
+            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(H_rate, 0.5, H_length,1);
             if type_id == 2 % adapt
                 out_spon = out_spon .* theta;
             end
 
             H_dur_counter = round(normrnd(H_dur, H_dur * 0.1) * dt_per_ms);
-            H_counter = round(poissrnd(H_avg_period * dt_per_ms)) + H_dur_counter;
+            H_counter = round(poissrnd(H_p * dt_per_ms)) + H_dur_counter;
             
             if t > equi_t
-                record_event(W, in, out_spon);
+                record_event(W, in, out_spon, false);
             end
         end
 
@@ -98,11 +98,11 @@ function W_all = independent_rates( ...
                 dW = (dt / tau_w) * (out .* (out - theta)) * (in - corr_thres)';
                 fix = double(out < theta) * double(in < corr_thres)';                                                                                                        
                 dW = dW .* (1 - fix);                                                                                                                                        
-                theta = theta + (dt / tau_theta) * (- theta + out .^ 2);
+                theta = theta + (dt / tau_theta) * (-theta + out .^ 2);
                 
             case 2 % adapt
                 dW = (dt / tau_w) * out * (in - corr_thres)';                                                                                                                       
-                theta = theta + (dt / tau_theta) * (- theta + out .^ 2);
+                theta = theta + (dt / tau_theta) * (-theta + out); %  .^ 2);
                 
             case 3 % oja
                 dW = (dt / tau_w) * (out * ones(1, N_in)) .* (ones(N_out, 1) * in' ...
@@ -135,6 +135,7 @@ function W_all = independent_rates( ...
         if mod(t, plot_W_freq * dt_per_ms) == 0         
             record_counter = record_counter + 1;
             fprintf('completion %.2f %% \n', t / (total_ms * dt_per_ms) * 100); 
+            theta'
             
             avg(record_counter) = mean(mean(W));
             W_all(:,:,record_counter) = W;
@@ -162,8 +163,8 @@ function W_all = independent_rates( ...
     
    % average firing rate of activated cells   
     subplot(4, 6, [9,10]);
-    histogram(H_active_rate, 0:0.05:3);
-    hold on; histogram(L_active_rate, 0:0.05:3);
+    histogram(H_active_rate, 0:0.05:5);
+    hold on; histogram(L_active_rate, 0:0.05:5);
     title('average firing rate of activated cortical cells');
     legend('H', 'L');
     
@@ -193,8 +194,8 @@ function W_all = independent_rates( ...
     text(0.1, 1.0, sprintf('total run time = %d ms', total_ms));
     text(0.5, 1.0, sprintf('dt per ms = %d', dt_per_ms));
     
-    text(0.1, 0.8, sprintf('L period = %.2f ms', L_avg_period));
-    text(0.5, 0.8, sprintf('H period = %.2f ms', H_avg_period));
+    text(0.1, 0.8, sprintf('L period = %.2f ms', L_p));
+    text(0.5, 0.8, sprintf('H period = %.2f ms', H_p));
     text(0.1, 0.7, sprintf('L dur = %.2f ms', L_dur));
     text(0.5, 0.7, sprintf('H dur = %.2f ms', H_dur));
     text(0.1, 0.6, sprintf('L pct = %.2f - %.2f', L_pct(1), L_pct(2)));
@@ -214,18 +215,18 @@ function W_all = independent_rates( ...
     export_fig(filename);    
     
     % helper function: record event
-    function record_event(W, in, out_spon)
+    function record_event(W, in, out_spon, is_L)
         equi_out = W * in + out_spon;
         active_out = equi_out > out_thres;
         active_rate = mean(equi_out(active_out));
 
-        if sum(active_out) < 0.8 * N_out
+        if sum(active_out) < 0.8 * N_out % is_L
             L_active_pct = [L_active_pct sum(active_out)];
             L_active_rate = [L_active_rate active_rate];
         else
             H_active_pct = [H_active_pct sum(active_out)];
             H_active_rate = [H_active_rate active_rate];
-        end
+        end                       
     end    
 end
 
