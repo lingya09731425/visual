@@ -98,11 +98,11 @@ function W_all = independent_rates( ...
                 dW = (dt / tau_w) * (out .* (out - theta)) * (in - corr_thres)';
                 fix = double(out < theta) * double(in < corr_thres)';                                                                                                        
                 dW = dW .* (1 - fix);                                                                                                                                        
-                theta = theta + (dt / tau_theta) * (-theta + out .^ 2);
+                theta = theta + (dt / tau_theta) * (-theta + out .^ 2 / 0.2);
                 
             case 2 % adapt
                 dW = (dt / tau_w) * out * (in - corr_thres)';                                                                                                                       
-                theta = theta + (dt / tau_theta) * (-theta + out); %  .^ 2);
+                theta = theta + (dt / tau_theta) * (-theta + out .^ 2);
                 
             case 3 % oja
                 dW = (dt / tau_w) * (out * ones(1, N_in)) .* (ones(N_out, 1) * in' ...
