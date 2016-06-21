@@ -22,7 +22,9 @@ function W_all = independent_rates( ...
     dt = 1 / dt_per_ms;
     
     % initialize weights
-    W = biased_weights(N_in, bias);
+    W = biased_weights(N_in, bias, 2, true);
+    M = biased_weights(N_out, NaN, 6, false);
+    M = M .* (1 - eye(N_out)) / 15;
     
     % initialize activities
     in = zeros(N_in, 1);
@@ -67,28 +69,26 @@ function W_all = independent_rates( ...
             if t > equi_t
                 record_event(W, in, out_spon, true);
             end
+            
+            fprintf('L event \n');
         end
 
-        if H_counter == 0
-            H_length = round(N_out * (H_pct(1) + rand(1) * (H_pct(2) - H_pct(1))));
-            H_start = randsample(N_out, 1);
-            
-            out_spon = zeros(N_out, 1);
-            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(H_rate, 0.5, H_length,1);
-            if type_id == 2 % adapt
-                out_spon = out_spon .* theta;
-            end
-
-            H_dur_counter = round(normrnd(H_dur, H_dur * 0.1) * dt_per_ms);
-            H_counter = round(poissrnd(H_p * dt_per_ms)) + H_dur_counter;
-            
-            if t > equi_t
-                record_event(W, in, out_spon, false);
-            end
-        end
-
+        % adaptive/intrinsic firing in cortical cells
+        out_spon = normrnd(H_rate, H_rate * 0.1, N_out, 1) .* theta;
+                
         % output vector
-        out = out + (dt / tau_out) * (-out + out_spon + W * in);
+        forward = W * in;
+        recur_intrin = out_spon + M * out;
+        out = out + (dt / tau_out) * (-out + forward + recur_intrin);
+                
+        if mod(t, 50) == 0
+            fprintf('forward = %.3f else = %.4f active = %d \n', ...
+                mean(forward), mean(recur_intrin), sum(out > out_thres));
+%             active_out = out > out_thres;
+%             active_rate = mean(out(active_out));
+%             H_active_pct = [H_active_pct sum(active_out)];
+%             H_active_rate = [H_active_rate active_rate];
+        end
         
         switch type_id
             case 0 % corr
@@ -111,7 +111,6 @@ function W_all = independent_rates( ...
         
         % update weight matrix
         W = W + dW;
-        % W = W ./ (sqrt(sum(W .^ 2, 2)) * ones(1, N_in));
         
         if bounded
             W(W < W_thres(1)) = W_thres(1);
@@ -134,8 +133,7 @@ function W_all = independent_rates( ...
         % record W
         if mod(t, plot_W_freq * dt_per_ms) == 0         
             record_counter = record_counter + 1;
-            fprintf('completion %.2f %% \n', t / (total_ms * dt_per_ms) * 100); 
-            theta'
+            fprintf('completion %.2f %% \n', t / (total_ms * dt_per_ms) * 100);
             
             avg(record_counter) = mean(mean(W));
             W_all(:,:,record_counter) = W;
@@ -220,7 +218,7 @@ function W_all = independent_rates( ...
         active_out = equi_out > out_thres;
         active_rate = mean(equi_out(active_out));
 
-        if sum(active_out) < 0.8 * N_out % is_L
+        if is_L % sum(active_out) < 0.8 * N_out
             L_active_pct = [L_active_pct sum(active_out)];
             L_active_rate = [L_active_rate active_rate];
         else

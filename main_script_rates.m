@@ -10,13 +10,13 @@ N_in = 50; N_out = 50;
 bias = 0.02;
 
 % time resolution
-total_ms = 10000;
+total_ms = 5000;
 dt_per_ms = 1000;
 
 % time constants
 tau_w = 250;
 tau_out = 0.01;
-tau_theta = 0.50;
+tau_theta = 10;
 
 % thresholds
 out_thres = 0.05;
@@ -24,9 +24,9 @@ W_thres = [0.0 0.4]; bounded = true;
 corr_thres = 0.4;
 
 % parameters for events
-L_p = 2.0; L_dur = 0.20; L_pct = [0.2 0.6];
-H_p = 2.0; H_dur = 0.20; H_pct = [0.8 1.0];
-H_rate = 5.0;
+L_p = 1.5; L_dur = 0.20; L_pct = [0.2 0.6];
+H_p = 1.5; H_dur = 0.20; H_pct = [0.8 1.0];
+H_rate = 0.01;
 
 % file naming
 folder_name = sprintf('images/%s', datestr(now, 'mmmdd'));
