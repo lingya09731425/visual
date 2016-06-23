@@ -4,7 +4,7 @@ function W_all = independent_rates( ...
     out_thres, W_thres, bounded, corr_thres, ...
     L_p, H_p, L_dur, H_dur, L_pct, H_pct, H_rate, ...
     tau_w, tau_out, tau_theta, ...
-    filename)
+    filename, logfile)
 
     switch type
         case 'corr'
@@ -23,8 +23,8 @@ function W_all = independent_rates( ...
     
     % initialize weights
     W = biased_weights(N_in, bias, 2, true);
-    M = biased_weights(N_out, NaN, 6, false);
-    M = M .* (1 - eye(N_out)) / 15;
+    M = biased_weights(N_out, NaN, 3, false);
+    M = M .* (1 - eye(N_out)) / 10;
     
     % initialize activities
     in = zeros(N_in, 1);
@@ -34,9 +34,9 @@ function W_all = independent_rates( ...
 
     % initialize counters
     L_counter = round(exprnd(L_p * dt_per_ms)) + 1;
-    H_counter = isinf(H_p) * (-1) + ...
-        ~isinf(H_p) * (round(poissrnd(H_p * dt_per_ms)) + 1);
-    L_dur_counter = 0; H_dur_counter = 0;
+    L_dur_counter = 0;
+    intrin_counter = round(exprnd(H_p * dt_per_ms, 1, N_out)) + 1;
+    intrin_dur_counter = zeros(1, N_out);
     record_counter = 1;
 
     % record events and weights
@@ -56,9 +56,12 @@ function W_all = independent_rates( ...
     
     for t = 1 : total_ms * dt_per_ms
 
+        % L event
         if L_counter == 0
+            fprintf(logfile, 'L event \n');
+            
             L_length = round(N_in * (L_pct(1) + rand(1) * (L_pct(2) - L_pct(1))));
-            L_start = randsample(N_in, 1);   
+            L_start = randsample(N_in, 1);
 
             in = zeros(N_in, 1);
             in(mod(L_start : L_start + L_length - 1, N_in) + 1) = 1;
@@ -69,25 +72,38 @@ function W_all = independent_rates( ...
             if t > equi_t
                 record_event(W, in, out_spon, true);
             end
+        end
+        
+        % intrinsic firing
+        fire = intrin_counter == 0;
+        num_of_fire = sum(fire);
+        if num_of_fire > 0
+            fprintf(logfile, 'intrinsic: ');
+            fprintf(logfile, '%d ', find(fire));
+            fprintf(logfile, '\n');
+            out_spon(fire) = H_rate;
             
-            fprintf('L event \n');
+            intrin_dur_counter(fire) = round(normrnd(H_dur, H_dur * 0.1, 1, num_of_fire) * dt_per_ms);
+            intrin_counter(fire) = round(exprnd(H_p * dt_per_ms, 1, num_of_fire)) + ...
+                intrin_dur_counter(fire);
         end
 
         % adaptive/intrinsic firing in cortical cells
-        out_spon = normrnd(H_rate, H_rate * 0.1, N_out, 1) .* theta;
+        % out_spon = normrnd(H_rate, H_rate * 0.1, N_out, 1) .* theta;
                 
         % output vector
         forward = W * in;
         recur_intrin = out_spon + M * out;
         out = out + (dt / tau_out) * (-out + forward + recur_intrin);
                 
-        if mod(t, 50) == 0
-            fprintf('forward = %.3f else = %.4f active = %d \n', ...
-                mean(forward), mean(recur_intrin), sum(out > out_thres));
-%             active_out = out > out_thres;
-%             active_rate = mean(out(active_out));
-%             H_active_pct = [H_active_pct sum(active_out)];
-%             H_active_rate = [H_active_rate active_rate];
+        if mod(t, 10) == 0
+            % fprintf(logfile, '%.3f ', out);
+            fprintf(logfile, 'forward = %.3f else = %.4f active = %d \n', ...
+                mean(forward), mean(recur_intrin), sum(recur_intrin > out_thres));
+            % active_out = out > out_thres;
+            % active_rate = mean(out(active_out));
+            % H_active_pct = [H_active_pct sum(active_out)];
+            % H_active_rate = [H_active_rate active_rate];
         end
         
         switch type_id
@@ -102,7 +118,7 @@ function W_all = independent_rates( ...
                 
             case 2 % adapt
                 dW = (dt / tau_w) * out * (in - corr_thres)';                                                                                                                       
-                theta = theta + (dt / tau_theta) * (-theta + out); %  .^ 2);
+                theta = theta + (dt / tau_theta) * (-theta + out .^ 2);
                 
             case 3 % oja
                 dW = (dt / tau_w) * (out * ones(1, N_in)) .* (ones(N_out, 1) * in' ...
@@ -119,15 +135,17 @@ function W_all = independent_rates( ...
             
         % counter operations
         L_counter = L_counter - 1;
-        H_counter = H_counter - 1;
         L_dur_counter = L_dur_counter -1;
-        H_dur_counter = H_dur_counter -1;
+        intrin_counter = intrin_counter - 1;
+        intrin_dur_counter = intrin_dur_counter -1;
         
         if L_dur_counter == 0
             in = zeros(N_in, 1);
         end
-        if H_dur_counter == 0
-            out_spon = zeros(N_out, 1);
+        
+        fire_stop = intrin_dur_counter == 0;
+        if any(fire_stop)
+            out_spon(fire_stop) = 0;
         end
         
         % record W
@@ -197,7 +215,7 @@ function W_all = independent_rates( ...
     text(0.1, 0.7, sprintf('L dur = %.2f ms', L_dur));
     text(0.5, 0.7, sprintf('H dur = %.2f ms', H_dur));
     text(0.1, 0.6, sprintf('L pct = %.2f - %.2f', L_pct(1), L_pct(2)));
-    text(0.5, 0.6, sprintf('H pct = %.2f - %.2f', H_pct(1), H_pct(2)));
+    % text(0.5, 0.6, sprintf('H pct = %.2f - %.2f', H_pct(1), H_pct(2)));
     
     text(0.1, 0.4, sprintf('tau w = %.2f', tau_w));
     text(0.1, 0.3, sprintf('tau out = %.2f', tau_out));
