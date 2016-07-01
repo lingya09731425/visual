@@ -2,7 +2,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     independent_rates( ...
         type, ...
         bias, N_in, N_out, total_ms, dt_per_ms, ...
-        out_thres, W_thres, bounded, corr_thres, pot_dep_ratio, ...
+        out_thres, W_thres, bounded, corr_thres, ...
         L_p, H_p, L_dur, H_dur, L_pct, H_pct, H_amp, ...
         tau_w, tau_out, tau_theta, ...
         summary_name, eventlog)
@@ -143,7 +143,6 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
         end
         
         % update weight matrix
-        dW(dW < 0) = dW(dW < 0) / pot_dep_ratio;
         W = W + dW;
         if bounded
             W(W < W_thres(1)) = W_thres(1);
@@ -186,12 +185,6 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
             imagesc(W);
             colorbar; caxis(W_thres);
             getframe;
-            
-            if all(all(round(W, 2) == W_thres(1))) || ...
-                    all(all(round(W, 2) == W_thres(2)))
-                fprintf('termination: all lit or all died \n');
-                break;
-            end
         end
     end
     
@@ -217,17 +210,19 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     
     % plot all synaptic weights to a cortical cell
     for i = 1 : 4
-        subplot(4, 6, 14 + i); colormap('hot');
-        extracted = reshape(plot_W(10 * i,:,:), [N_in,num_of_plots]);
-        imagesc(extracted);
+        subplot(4, 6, 14 + i);
+        extracted = reshape(plot_W(10 * i,:,:), [N_in,num_of_plots])';
+        plot(plot_times_ms, double(extracted) / data_multi);
+        ylim(W_thres);
         title(sprintf('all synapses to CORTICAL cell #%d', 10 * i));
     end
 
     % plot all synaptic weights from a retina cell
     for i = 1 : 4
-        subplot(4, 6, 20 + i); colormap('hot');
-        extracted = reshape(plot_W(:, 10 * i,:), [N_out,num_of_plots]);
-        imagesc(extracted);
+        subplot(4, 6, 20 + i);
+        extracted = reshape(plot_W(:, 10 * i,:), [N_out,num_of_plots])';
+        plot(plot_times_ms, double(extracted) / data_multi);
+        ylim(W_thres);
         title(sprintf('all synapses from RETINAL cell #%d', 10 * i));
     end
 
@@ -256,7 +251,6 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     text(0.5, 0.3, sprintf('W thres = %.2f - %.2f', W_thres(1), W_thres(2)));
     text(0.5, 0.2, sprintf('out thres = %.2f', out_thres));
     text(0.5, 0.1, sprintf('corr thres = %.2f', corr_thres));
-    text(0.5, 0.0, sprintf('pot:dep = %.2f:1.00', pot_dep_ratio));
 
     % save figure
     export_fig(summary_name);    
