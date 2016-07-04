@@ -1,7 +1,7 @@
-function W_all = independent_rates( ...
+function [W_all, out_all] = independent_rates( ...
     type, ...
     bias, N_in, N_out, total_ms, dt_per_ms, ...
-    out_thres, W_thres, bounded, corr_thres, ...
+    out_thres, W_thres, bounded, corr_thres, pot_dep_ratio, ...
     L_p, H_p, L_dur, H_dur, L_pct, H_pct, H_rate, ...
     tau_w, tau_out, tau_theta, ...
     filename, logfile)
@@ -22,9 +22,9 @@ function W_all = independent_rates( ...
     dt = 1 / dt_per_ms;
     
     % initialize weights
-    W = biased_weights(N_in, bias, 2, true);
-    M = biased_weights(N_out, NaN, 3, false);
-    M = M .* (1 - eye(N_out)) / 10;
+    W = biased_weights(N_in, bias, 2, true) * 2;
+    M = biased_weights(N_out, NaN, 10, false);
+    M = M .* (1 - eye(N_out)) / 20;
     
     % initialize activities
     in = zeros(N_in, 1);
@@ -35,31 +35,33 @@ function W_all = independent_rates( ...
     % initialize counters
     L_counter = round(exprnd(L_p * dt_per_ms)) + 1;
     L_dur_counter = 0;
+    
     intrin_counter = round(exprnd(H_p * dt_per_ms, 1, N_out)) + 1;
     intrin_dur_counter = zeros(1, N_out);
-    record_counter = 1;
 
-    % record events and weights
-    plot_W_freq = 50;
+    % record events, weights and output vectors
     L_active_pct = []; H_active_pct = [];
     L_active_rate = []; H_active_rate = [];
     
+    plot_W_freq = 50;
+    record_out_freq = 0.01;
     num_of_records = round(total_ms / plot_W_freq) + 1;
+    equi_t = 0.5 * total_ms;
+    
     avg = zeros(1, num_of_records);
     avg(1) = mean(mean(W));
     W_all = zeros(N_out, N_in, num_of_records);
     W_all(:,:,1) = W;
     
+    out_all = zeros((total_ms - equi_t) / record_out_freq, N_out);
+    
     % for plotting
     figure;
-    equi_t = 0.5 * total_ms * dt_per_ms;
     
     for t = 1 : total_ms * dt_per_ms
 
         % L event
-        if L_counter == 0
-            fprintf(logfile, 'L event \n');
-            
+        if ~isinf(L_p) && L_counter == 0
             L_length = round(N_in * (L_pct(1) + rand(1) * (L_pct(2) - L_pct(1))));
             L_start = randsample(N_in, 1);
 
@@ -69,23 +71,28 @@ function W_all = independent_rates( ...
             L_dur_counter = round(normrnd(L_dur, L_dur * 0.1) * dt_per_ms);
             L_counter = round(exprnd(L_p * dt_per_ms)) + L_dur_counter;
             
-            if t > equi_t
+            if t > equi_t * dt_per_ms
                 record_event(W, in, out_spon, true);
             end
+            
+            fprintf(logfile, '*** L event center = %d ***\n', ...
+                mod(L_start + round(L_length / 2), N_in));
         end
         
         % intrinsic firing
-        fire = intrin_counter == 0;
-        num_of_fire = sum(fire);
-        if num_of_fire > 0
-            fprintf(logfile, 'intrinsic: ');
-            fprintf(logfile, '%d ', find(fire));
-            fprintf(logfile, '\n');
-            out_spon(fire) = H_rate;
-            
-            intrin_dur_counter(fire) = round(normrnd(H_dur, H_dur * 0.1, 1, num_of_fire) * dt_per_ms);
-            intrin_counter(fire) = round(exprnd(H_p * dt_per_ms, 1, num_of_fire)) + ...
-                intrin_dur_counter(fire);
+        if ~isinf(H_p)
+            fire = intrin_counter == 0;
+            num_of_fire = sum(fire);
+            if num_of_fire > 0
+                fprintf(logfile, 'intrinsic: ');
+                fprintf(logfile, '%d ', find(fire));
+                fprintf(logfile, '\n');
+                out_spon(fire) = H_rate;
+
+                intrin_dur_counter(fire) = round(normrnd(H_dur, H_dur * 0.1, 1, num_of_fire) * dt_per_ms);
+                intrin_counter(fire) = round(exprnd(H_p * dt_per_ms, 1, num_of_fire)) + ...
+                    intrin_dur_counter(fire);
+            end
         end
 
         % adaptive/intrinsic firing in cortical cells
@@ -94,16 +101,20 @@ function W_all = independent_rates( ...
         % output vector
         forward = W * in;
         recur_intrin = out_spon + M * out;
-        out = out + (dt / tau_out) * (-out + forward + recur_intrin);
+        % target = forward + recur_intrin;
+        target = sigmoid(forward + recur_intrin, H_rate, H_rate / 2, H_rate / 8);
+        out = out + (dt / tau_out) * (-out + target);
                 
-        if mod(t, 10) == 0
-            % fprintf(logfile, '%.3f ', out);
+        if mod(t, record_out_freq * dt_per_ms) == 0
+            fprintf(logfile, '%.3f ', out);
+            fprintf(logfile, '\n');
             fprintf(logfile, 'forward = %.3f else = %.4f active = %d \n', ...
-                mean(forward), mean(recur_intrin), sum(recur_intrin > out_thres));
-            % active_out = out > out_thres;
-            % active_rate = mean(out(active_out));
-            % H_active_pct = [H_active_pct sum(active_out)];
-            % H_active_rate = [H_active_rate active_rate];
+                mean(forward), mean(recur_intrin), sum(out > out_thres));
+            
+            if t > equi_t * dt_per_ms
+                ind = round((t / dt_per_ms - equi_t) / record_out_freq);
+                out_all(ind,:) = out';
+            end
         end
         
         switch type_id
@@ -126,6 +137,7 @@ function W_all = independent_rates( ...
         end
         
         % update weight matrix
+        dW(dW < 0) = dW(dW < 0) / pot_dep_ratio;
         W = W + dW;
         
         if bounded
@@ -143,24 +155,27 @@ function W_all = independent_rates( ...
             in = zeros(N_in, 1);
         end
         
-        fire_stop = intrin_dur_counter == 0;
-        if any(fire_stop)
-            out_spon(fire_stop) = 0;
-        end
+        out_spon(intrin_dur_counter == 0) = 0;
         
         % record W
         if mod(t, plot_W_freq * dt_per_ms) == 0         
-            record_counter = record_counter + 1;
             fprintf('completion %.2f %% \n', t / (total_ms * dt_per_ms) * 100);
             
-            avg(record_counter) = mean(mean(W));
-            W_all(:,:,record_counter) = W;
+            rc = t / (plot_W_freq * dt_per_ms) + 1;
+            avg(rc) = mean(mean(W));
+            W_all(:,:,rc) = W;
 
             subplot(4, 6, [1,2,7,8]);
             colormap('hot');
             imagesc(W);
             colorbar; caxis(W_thres);
             getframe;
+            
+            if all(all(round(W, 2) == W_thres(1))) || ...
+                    all(all(round(W, 2) == W_thres(2)))
+                fprintf('termination: all lit or all died \n');
+                break;
+            end
         end
     end
     
@@ -215,7 +230,7 @@ function W_all = independent_rates( ...
     text(0.1, 0.7, sprintf('L dur = %.2f ms', L_dur));
     text(0.5, 0.7, sprintf('H dur = %.2f ms', H_dur));
     text(0.1, 0.6, sprintf('L pct = %.2f - %.2f', L_pct(1), L_pct(2)));
-    % text(0.5, 0.6, sprintf('H pct = %.2f - %.2f', H_pct(1), H_pct(2)));
+    text(0.5, 0.6, sprintf('H rate = %.2f', H_rate));
     
     text(0.1, 0.4, sprintf('tau w = %.2f', tau_w));
     text(0.1, 0.3, sprintf('tau out = %.2f', tau_out));
@@ -243,6 +258,6 @@ function W_all = independent_rates( ...
             H_active_pct = [H_active_pct sum(active_out)];
             H_active_rate = [H_active_rate active_rate];
         end                       
-    end    
+    end 
 end
 

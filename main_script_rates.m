@@ -14,22 +14,23 @@ total_ms = 7000;
 dt_per_ms = 1000;
 
 % time constants
-tau_w = 500;
+tau_w = 1000;
 tau_out = 0.01;
 tau_theta = 10;
 
 % thresholds
-out_thres = 1;
+out_thres = 0.5;
 W_thres = [0.0 0.2]; bounded = true;
-corr_thres = 0.5;
+corr_thres = 0.4;
+pot_dep_ratio = 1;
 
 % parameters for events
-L_p = 1.5; L_dur = 0.20; L_pct = [0.2 0.6];
+L_p = 1.0; L_dur = 0.15; L_pct = [0.2 0.6];
 H_p = 5.0; H_dur = 0.05; H_pct = NaN;
-H_rate = 1;
+H_rate = 3;
 
 % file naming
-folder_name = sprintf('images/%s', datestr(now, 'mmmdd'));
+folder_name = sprintf('../visual_images/%s', datestr(now, 'mmmdd'));
 if ~exist(folder_name, 'dir')
     mkdir(folder_name)
 end
@@ -42,17 +43,27 @@ filename = sprintf('%s/%s_Ld%d_Hd%d_Lp%d_Hp%d_%s.png', ...
 
 logfile = fopen('log.txt','w');
 
-W_evo = independent_rates( ...
+[W_evo, out_all] = independent_rates( ...
             type, ...
             bias, N_in, N_out, total_ms, dt_per_ms, ...
-            out_thres, W_thres, bounded, corr_thres, ...
+            out_thres, W_thres, bounded, corr_thres, pot_dep_ratio, ...
             L_p, H_p, L_dur, H_dur, L_pct, H_pct, H_rate, ...
             tau_w, tau_out, tau_theta, ...
             filename, logfile);
 
 fclose(logfile);
-        
-% phase;
-        
-        
+
+figure;
+colormap('hot');
+imagesc(out_all');
+colorbar;
+
+filename_out = strrep(filename, 'png', 'mat');
+save(filename_out, 'W_evo', 'out_all');
+
+% figure;
+% histogram(out_all(out_all > 1));
+% 
+% figure;
+% histogram(sum(out_all > 0.5, 2));
         

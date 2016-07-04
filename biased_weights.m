@@ -1,10 +1,12 @@
 function W = biased_weights(N_in, bias, spread, random)
     W = zeros(N_in);
 
-    for i = 0 : N_in - 1
-        for j = 1 : N_in - i
-            W(j,j+i) = normpdf(i, 0, spread);
-            W(j+i,j) = normpdf(i, 0, spread);
+    limit = random * floor(N_in / 2) + ~random * spread;
+    
+    for i = 0 : limit
+        for j = 1 : N_in
+            W(j,mod(j + i - 1, N_in) + 1) = normpdf(i, 0, spread);
+            W(j,mod(j - i - 1, N_in) + 1) = normpdf(i, 0, spread);
         end
     end
 
