@@ -1,4 +1,4 @@
-function W = biased_weights(N_in, bias, spread, random)
+function W = biased_weights(N_in, W_initial, bias, spread)
     W = zeros(N_in);
 
     for i = 0 : floor(N_in / 2)
@@ -9,11 +9,8 @@ function W = biased_weights(N_in, bias, spread, random)
     end
 
     W = W / normpdf(0, 0, spread);
-    
-    if random
-        W = bias * W + rand(N_in) / 20 - mean(mean(bias * W));
-        W(W < 0) = 0;
-    end
+    W = bias * W + normrnd(W_initial, W_initial / 5, N_in, N_in) - mean(mean(bias * W));
+    W(W < 0) = 0;
 end
 
 

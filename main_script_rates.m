@@ -6,11 +6,12 @@ type = 'corr';
 % number of cells
 N_in = 50; N_out = 50;
 
-% bias
-bias = 0.02;
+% initial weight and bias
+W_initial = 0.2;
+bias = 0.1;
 
 % time resolution
-total_ms = 8000;
+total_ms = 5000;
 dt_per_ms = 1000;
 
 % time constants
@@ -20,13 +21,14 @@ tau_theta = 10;
 
 % thresholds
 out_thres = 0.05;
-W_thres = [0.0 0.4]; bounded = true;
+W_thres = [0.0 0.5]; bounded = true;
 corr_thres = 0.4;
-pot_dep_ratio = 3;
+pot_dep_ratio = 1;
 
 % parameters for events
-L_p = 2.0; L_dur = 0.20; L_pct = [0.2 0.6];
-H_p = 5.0; H_dur = 0.20; H_pct = [0.8 1.0];
+L_dur = 0.20; H_dur = 0.20;
+L_p = 2.0; H_p = 4.0;
+L_pct = [0.2 0.6]; H_pct = [0.8 1.0];
 H_amp = 2.0;
 
 % file naming
@@ -60,7 +62,7 @@ eventlog = fopen(sprintf('%s/eventlog.txt', subfolder_name), 'w');
 [record_times,record_W,record_output,record_theta,plot_times,plot_W] = ...
     independent_rates( ...
         type, ...
-        bias, N_in, N_out, total_ms, dt_per_ms, ...
+        W_initial, bias, N_in, N_out, total_ms, dt_per_ms, ...
         out_thres, W_thres, bounded, corr_thres, pot_dep_ratio, ...
         L_p, H_p, L_dur, H_dur, L_pct, H_pct, H_amp, ...
         tau_w, tau_out, tau_theta, ...
@@ -71,8 +73,6 @@ save(weights_name, 'record_W', 'record_times', '-v7.3');
 save(weights_sparse_name, 'plot_W', 'plot_times');
 save(output_name, 'record_output', 'record_times');
 save(theta_name, 'record_theta', 'record_times');
- 
+
 fclose(eventlog);
-        
-        
-        
+

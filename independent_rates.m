@@ -1,7 +1,7 @@
 function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot_W] = ...
     independent_rates( ...
         type, ...
-        bias, N_in, N_out, total_ms, dt_per_ms, ...
+        W_initial, bias, N_in, N_out, total_ms, dt_per_ms, ...
         out_thres, W_thres, bounded, corr_thres, pot_dep_ratio, ...
         L_p, H_p, L_dur, H_dur, L_pct, H_pct, H_amp, ...
         tau_w, tau_out, tau_theta, ...
@@ -25,7 +25,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     dt = 1 / dt_per_ms;
     
     % initialize weights
-    W = biased_weights(N_in, bias, 2, true);
+    W = biased_weights(N_in, W_initial, bias, 2);
     
     % initialize activities
     in = zeros(N_in, 1);
@@ -35,9 +35,11 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
 
     % initialize counters
     L_counter = round(exprnd(L_p * dt_per_ms)) + 1;
+    L_dur_counter = 0;
+    
     H_counter = isinf(H_p) * (-1) + ...
         ~isinf(H_p) * (round(poissrnd(H_p * dt_per_ms)) + 1);
-    L_dur_counter = 0; H_dur_counter = 0;
+    H_dur_counter = 0;
     
     record_counter = 1;
     plot_counter = 1;
@@ -77,7 +79,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     
     % for plotting
     figure;
-    equi_t = 0.5 * total_ms * dt_per_ms;
+    equi_t = 0.7 * total_ms * dt_per_ms;
     
     for t = 1 : total_ms * dt_per_ms
 
@@ -123,6 +125,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
         % output vector
         out = out + (dt / tau_out) * (-out + out_spon + W * in);
         
+        % different LRs
         switch type_id
             case 0 % corr
                 dW = (dt / tau_w) * out * (in - corr_thres)';
@@ -220,6 +223,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
         subplot(4, 6, 14 + i); colormap('hot');
         extracted = reshape(plot_W(10 * i,:,:), [N_in,num_of_plots]);
         imagesc(extracted);
+        caxis(W_thres * data_multi);
         title(sprintf('all synapses to CORTICAL cell #%d', 10 * i));
     end
 
@@ -228,6 +232,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
         subplot(4, 6, 20 + i); colormap('hot');
         extracted = reshape(plot_W(:, 10 * i,:), [N_out,num_of_plots]);
         imagesc(extracted);
+        caxis(W_thres * data_multi);
         title(sprintf('all synapses from RETINAL cell #%d', 10 * i));
     end
 
@@ -267,7 +272,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
         active_out = equi_out > out_thres;
         active_rate = mean(equi_out(active_out));
 
-        if sum(active_out) < 0.8 * N_out % is_L
+        if sum(active_out) < 0.8 * N_out
             L_active_pct = [L_active_pct sum(active_out)];
             L_active_rate = [L_active_rate active_rate];
         else
