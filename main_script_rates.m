@@ -15,21 +15,21 @@ total_ms = 5000;
 dt_per_ms = 1000;
 
 % time constants
-tau_w = 300;
+tau_w = 500;
 tau_out = 0.01;
 tau_theta = 10;
 
 % thresholds
-out_thres = 0.05;
-W_thres = [0.0 0.5]; bounded = true;
-corr_thres = 0.4;
+out_thres = 1.0;
+W_thres = [0.0 0.4]; bounded = true;
+corr_thres = 0.3;
 pot_dep_ratio = 1;
 
 % parameters for events
 L_dur = 0.15; H_dur = 0.15;
 L_p = 1.5; H_p = 3.0;
-L_pct = [0.2 0.6]; H_pct = [0.8 1.0];
-H_amp = 2.0;
+L_pct = [0.2 0.6]; H_pct = [0.9 1.0];
+H_amp = 4.5;
 
 % file naming
 folder_name = sprintf('../visual_images/%s', datestr(now, 'mmmdd'));

@@ -106,7 +106,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
             H_start = randsample(N_out, 1);
             
             out_spon = zeros(N_out, 1);
-            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(H_amp, 0.5, H_length,1);
+            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(H_amp, H_amp / 3, H_length,1);
             if type_id == 2 % adapt
                 out_spon = out_spon .* theta;
             end
@@ -213,8 +213,8 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     
    % average firing rate of activated cells   
     subplot(4, 6, [9,10]);
-    histogram(H_active_rate, 0:0.05:5);
-    hold on; histogram(L_active_rate, 0:0.05:5);
+    histogram(H_active_rate, 0:0.1:10);
+    hold on; histogram(L_active_rate, 0:0.1:10);
     title('average firing rate of activated cortical cells');
     legend('H', 'L');
     
