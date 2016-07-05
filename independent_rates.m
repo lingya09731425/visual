@@ -25,7 +25,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     dt = 1 / dt_per_ms;
     
     % initialize weights
-    W = biased_weights(N_in, W_initial, bias, 2);
+    W = biased_weights(N_in, W_initial, bias, 4);
     
     % initialize activities
     in = zeros(N_in, 1);

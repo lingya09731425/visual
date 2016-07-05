@@ -9,7 +9,9 @@ function W = biased_weights(N_in, W_initial, bias, spread)
     end
 
     W = W / normpdf(0, 0, spread);
-    W = bias * W + normrnd(W_initial, W_initial / 5, N_in, N_in) - mean(mean(bias * W));
+    W = W - mean(mean(W));
+    
+    W = bias * W + W_initial(1) + (W_initial(2) - W_initial(1)) * rand(N_in);
     W(W < 0) = 0;
 end
 

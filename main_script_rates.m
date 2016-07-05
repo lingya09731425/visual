@@ -7,15 +7,15 @@ type = 'corr';
 N_in = 50; N_out = 50;
 
 % initial weight and bias
-W_initial = 0.2;
-bias = 0.1;
+W_initial = [0.15 0.25];
+bias = 0.10;
 
 % time resolution
 total_ms = 5000;
 dt_per_ms = 1000;
 
 % time constants
-tau_w = 250;
+tau_w = 300;
 tau_out = 0.01;
 tau_theta = 10;
 
@@ -26,8 +26,8 @@ corr_thres = 0.4;
 pot_dep_ratio = 1;
 
 % parameters for events
-L_dur = 0.20; H_dur = 0.20;
-L_p = 2.0; H_p = 4.0;
+L_dur = 0.15; H_dur = 0.15;
+L_p = 1.5; H_p = 3.0;
 L_pct = [0.2 0.6]; H_pct = [0.8 1.0];
 H_amp = 2.0;
 
