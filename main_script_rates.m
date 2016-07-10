@@ -8,10 +8,11 @@ N_in = 50; N_out = 50;
 
 % initial weight and bias
 W_initial = [0.15 0.25];
-bias = 0.10;
+bias = 0.07;
+spread = 4;
 
 % time resolution
-total_ms = 5000;
+total_ms = 10000;
 dt_per_ms = 1000;
 
 % time constants
@@ -22,12 +23,13 @@ tau_theta = 10;
 % thresholds
 out_thres = 1.0;
 W_thres = [0.0 0.4]; bounded = true;
-corr_thres = 0.3;
+corr_thres = 0.7;
 pot_dep_ratio = 1;
 
 % parameters for events
 L_dur = 0.15; H_dur = 0.15;
-L_p = 1.5; H_p = 3.0;
+L_p = 1.5; H_p = Inf;
+
 L_pct = [0.2 0.6]; H_pct = [0.9 1.0];
 H_amp = 4.5;
 
@@ -61,8 +63,9 @@ eventlog = fopen(sprintf('%s/eventlog.txt', subfolder_name), 'w');
 % run simulation
 [record_times,record_W,record_output,record_theta,plot_times,plot_W] = ...
     independent_rates( ...
-        type, ...
-        W_initial, bias, N_in, N_out, total_ms, dt_per_ms, ...
+        type, N_in, N_out, ...
+        W_initial, bias, spread, ...
+        total_ms, dt_per_ms, ...
         out_thres, W_thres, bounded, corr_thres, pot_dep_ratio, ...
         L_p, H_p, L_dur, H_dur, L_pct, H_pct, H_amp, ...
         tau_w, tau_out, tau_theta, ...

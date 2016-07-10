@@ -1,7 +1,8 @@
 function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot_W] = ...
     independent_rates( ...
-        type, ...
-        W_initial, bias, N_in, N_out, total_ms, dt_per_ms, ...
+        type, N_in, N_out, ...
+        W_initial, bias, spread, ...
+        total_ms, dt_per_ms, ...
         out_thres, W_thres, bounded, corr_thres, pot_dep_ratio, ...
         L_p, H_p, L_dur, H_dur, L_pct, H_pct, H_amp, ...
         tau_w, tau_out, tau_theta, ...
@@ -25,7 +26,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     dt = 1 / dt_per_ms;
     
     % initialize weights
-    W = biased_weights(N_in, W_initial, bias, 4);
+    W = biased_weights(N_in, W_initial, bias, spread);
     
     % initialize activities
     in = zeros(N_in, 1);
@@ -49,7 +50,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     L_active_rate = []; H_active_rate = [];
     
     % initialize matrices for recording weights, output, theta
-    record_freq = 0.05;
+    record_freq = 1;
     fprintf(eventlog, 'record freq: every %.2f ms \n', record_freq);
     
     record_times_ms = [0 : record_freq : (total_ms * 0.2) ...
@@ -203,6 +204,12 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     colormap('hot');
     imagesc(W);
     colorbar; caxis(W_thres);
+    
+    active = W > W_thres(1) + (W_thres(2) - W_thres(1)) / 5;
+    bar_width = sum(active, 2);
+    avg_width = mean(bar_width(bar_width > 5));
+    sparsity = sum(bar_width > 5) / N_out;
+    title(sprintf('sparsity = %d%% width = %.1f', round(sparsity * 100), avg_width));
 
     % plot histogram for cortical cell activation
     subplot(4, 6, [3,4]);
@@ -237,32 +244,37 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     end
 
     % plot the progression of the average weight
-    subplot(4, 6, [5,6,11,12]);
+    subplot(4, 6, [11,12]);
     plot(plot_times_ms, reshape(mean(mean(plot_W)), [1,num_of_plots])  / data_multi);
     title('average weight v.s. t');
-
+    
     % add notations to summary plot
-    s = subplot(4, 6, [13,14,19,20]); set(s, 'visible', 'off');
+    s = subplot(4, 6, [5,6]); set(s, 'visible', 'off');
     text(0.1, 1.0, sprintf('total run time = %d ms', total_ms));
     text(0.5, 1.0, sprintf('dt per ms = %d', dt_per_ms));
-    
+    text(0.1, 0.9, sprintf('bg W = %.2f - %.2f', W_initial(1), W_initial(2)));
+
     text(0.1, 0.8, sprintf('L period = %.2f ms', L_p));
     text(0.5, 0.8, sprintf('H period = %.2f ms', H_p));
     text(0.1, 0.7, sprintf('L dur = %.2f ms', L_dur));
     text(0.5, 0.7, sprintf('H dur = %.2f ms', H_dur));
     text(0.1, 0.6, sprintf('L pct = %.2f - %.2f', L_pct(1), L_pct(2)));
     text(0.5, 0.6, sprintf('H pct = %.2f - %.2f', H_pct(1), H_pct(2)));
+    text(0.1, 0.5, sprintf('bias = %.2f', bias));
     text(0.5, 0.5, sprintf('H amp = %.2f', H_amp));
     
     text(0.1, 0.3, sprintf('tau w = %.2f', tau_w));
     text(0.1, 0.2, sprintf('tau out = %.2f', tau_out));
     text(0.1, 0.1, sprintf('tau theta = %.2f', tau_theta));
+    if ~bounded
+        text(0.1, 0.0, sprintf('unbounded'));
+    end
     
     text(0.5, 0.3, sprintf('W thres = %.2f - %.2f', W_thres(1), W_thres(2)));
     text(0.5, 0.2, sprintf('out thres = %.2f', out_thres));
     text(0.5, 0.1, sprintf('corr thres = %.2f', corr_thres));
     text(0.5, 0.0, sprintf('pot:dep = %.2f:1.00', pot_dep_ratio));
-
+    
     % save figure
     export_fig(summary_name);    
     
