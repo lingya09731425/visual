@@ -26,7 +26,9 @@ function [record_times_ms,record_W,record_output,record_theta,record_gaba,plot_t
     
     % initialize weights
     W = biased_weights(N_in, [0.15 0.25], bias, 4, true);
-    W_gaba = biased_weights(N_out, [0.7 0.9], 0, 5, true);
+    
+    rand_connect = reshape(randsample([0,1], N_out * N_out, true, [0.8,0.2]), [N_out,N_out]);
+    W_gaba = biased_weights(N_out, [0.7 0.9], 0, 4, true) .* round(rand(N_out));
     
     M = biased_weights(N_out, NaN, NaN, 7, false);
     M = M .* (1 - eye(N_out)) / 15;
@@ -57,7 +59,7 @@ function [record_times_ms,record_W,record_output,record_theta,record_gaba,plot_t
     fprintf(eventlog, 'record freq: every %.2f ms \n', record_freq);
     
     record_times_ms = [0 : record_freq : (total_ms * 0.2) ...
-        (total_ms * 0.5) : record_freq : (total_ms * 0.6) ...
+        (total_ms * 0.4) : record_freq : (total_ms * 0.6) ...
         (total_ms * 0.9) : record_freq : total_ms];
     record_times_dt = int32(record_times_ms * dt_per_ms);
     num_of_records = length(record_times_dt);
@@ -85,7 +87,7 @@ function [record_times_ms,record_W,record_output,record_theta,record_gaba,plot_t
     
     % for plotting
     figure;
-    equi_t = 0.5 * total_ms * dt_per_ms;
+    equi_t = total_ms * dt_per_ms;
     
     for t = 1 : total_ms * dt_per_ms
 
@@ -120,9 +122,21 @@ function [record_times_ms,record_W,record_output,record_theta,record_gaba,plot_t
             end
         end
 
+        % switch halfway
+        if t == equi_t
+            W_gaba = -biased_weights(N_out, [0.0 0.05], 0, 4, true);
+            W_glut = biased_weights(N_out, [0.1 0.2], 0, 4, true);
+        end
+        
         % output vector
-        gaba = gaba + (dt / tau_out) * (-gaba + gaba_spon + M * gaba);
-        out = out + (dt / tau_out) * (-out + W * in + W_gaba * gaba);
+        if t < equi_t
+            gaba = gaba + (dt / tau_out) * (-gaba + gaba_spon + M * gaba);
+            out = out + (dt / tau_out) * (-out + W * in + W_gaba * gaba);
+        else
+            gaba = gaba + (dt / tau_out) * (-gaba + W_glut * out);
+            out = out + (dt / tau_out) * (-out + W * in + W_gaba * gaba);
+            out(out < 0) = 0;
+        end
         
         switch type_id
             case 0 % corr
