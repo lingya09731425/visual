@@ -26,7 +26,8 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     dt = 1 / dt_per_ms;
     
     % initialize weights
-    W = biased_weights(N_in, W_initial, bias, spread);
+    W = biased_weights(N_in, W_initial, bias, spread, true);
+    M = biased_weights(N_out, NaN, 0.05, 5, false);
     
     % initialize activities
     in = zeros(N_in, 1);
@@ -38,9 +39,8 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     L_counter = round(exprnd(L_p * dt_per_ms)) + 1;
     L_dur_counter = 0;
     
-    H_counter = isinf(H_p) * (-1) + ...
-        ~isinf(H_p) * (round(poissrnd(H_p * dt_per_ms)) + 1);
-    H_dur_counter = 0;
+    intrin_counter = round(exprnd(H_p * dt_per_ms, 1, N_out)) + 1;
+    intrin_dur_counter = zeros(1, N_out);
     
     record_counter = 1;
     plot_counter = 1;
@@ -102,29 +102,24 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
             fprintf(eventlog, '%d L %d %d \n', t, center, L_length);
         end
 
-        if H_counter == 0
-            H_length = round(N_out * (H_pct(1) + rand(1) * (H_pct(2) - H_pct(1))));
-            H_start = randsample(N_out, 1);
-            
-            out_spon = zeros(N_out, 1);
-            out_spon(mod(H_start : H_start + H_length - 1, N_out) + 1) = normrnd(H_amp, H_amp / 3, H_length,1);
-            if type_id == 2 % adapt
-                out_spon = out_spon .* theta;
+        % intrinsic firing
+        if ~isinf(H_p)
+            fire = intrin_counter == 0;
+            num_of_fire = sum(fire);
+            if num_of_fire > 0
+                out_spon(fire) = H_amp;
+                intrin_dur_counter(fire) = round(normrnd(H_dur, H_dur * 0.1, 1, num_of_fire) * dt_per_ms);
+                intrin_counter(fire) = round(exprnd(H_p * dt_per_ms, 1, num_of_fire)) + ...
+                    intrin_dur_counter(fire);
             end
-
-            H_dur_counter = round(normrnd(H_dur, H_dur * 0.1) * dt_per_ms);
-            H_counter = round(poissrnd(H_p * dt_per_ms)) + H_dur_counter;
-            
-            if t > equi_t
-                event_recorder(W, in, out_spon, false);
-            end
-            
-            center = mod(H_start + round(H_length / 2), N_in);
-            fprintf(eventlog, '%d H %d %d \n', t, center, H_length);
         end
 
         % output vector
-        out = out + (dt / tau_out) * (-out + out_spon + W * in);
+        forward = W * in;
+        recur_intrin = out_spon + M * out;
+        target = forward + recur_intrin;
+        % target = sigmoid(forward + recur_intrin, H_rate, H_rate / 2, H_rate / 8);
+        out = out + (dt / tau_out) * (-out + target);
         
         % different LRs
         switch type_id
@@ -156,17 +151,16 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
             
         % counter operations
         L_counter = L_counter - 1;
-        H_counter = H_counter - 1;
-        L_dur_counter = L_dur_counter - 1;
-        H_dur_counter = H_dur_counter - 1;
+        L_dur_counter = L_dur_counter -1;
+        intrin_counter = intrin_counter - 1;
+        intrin_dur_counter = intrin_dur_counter -1;
         
         % end of events
         if L_dur_counter == 0
             in = zeros(N_in, 1);
         end
-        if H_dur_counter == 0
-            out_spon = zeros(N_out, 1);
-        end
+
+        out_spon(intrin_dur_counter == 0) = 0;
         
         % record W, output, theta
         if mod(t, record_freq * dt_per_ms) == 0 && ismember(t, record_times_dt)

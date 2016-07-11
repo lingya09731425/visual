@@ -1,5 +1,7 @@
 figure;
 
+plot_phase = true;
+
 note = 'H_theta_correspond_unbounded';
 folder_name = sprintf('../visual_images/%s/%s', datestr(now, 'mmmdd'), note);
 
@@ -46,10 +48,14 @@ for corr_thres = 0.25 : 0.05 : 0.50
                 sparsities = [sparsities sparsity];
 
                 subplot(6, 6, plot_num);
-                phase(plot_W, corr_thres);
-                % colormap('hot');
-                % imagesc(W_end);
-                % caxis(W_thres);
+                
+                if plot_phase
+                    phase(plot_W, corr_thres);
+                else
+                    colormap('hot');
+                    imagesc(W_end);
+                    caxis(W_thres);
+                end
                 title(sprintf('sparsity = %d%% width = %.1f', round(sparsity * 100), avg_width));
             end
     end
