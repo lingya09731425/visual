@@ -38,8 +38,10 @@ function phase(plot_W, ~)
     % figure;
     plot(w_up(1,:), w_down(1,:));
     plot_limit = max([max(max(abs(w_up))) max(max(abs(w_down)))]);
-    xlim([-1.5 1.5]); % xlim([-plot_limit plot_limit]);
-    ylim([-1.5 1.5]); % ylim([-plot_limit plot_limit]);
+    xlim([-plot_limit plot_limit]);
+    ylim([-plot_limit plot_limit]);
+    % xlim([-1.5 1.5]);
+    % ylim([-1.5 1.5]);
     hold on;
     for i = 2 : 50
         plot(w_up(i,:), w_down(i,:));
