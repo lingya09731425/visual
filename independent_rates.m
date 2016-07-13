@@ -6,6 +6,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
         out_thres, W_thres, bounded, corr_thres, pot_dep_ratio, ...
         L_p, H_p, L_dur, H_dur, L_pct, H_pct, H_amp, ...
         tau_w, tau_out, tau_theta, ...
+        allowed_active_dur, refract_dur, ...
         summary_name, eventlog)
 
     switch type
@@ -27,7 +28,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     
     % initialize weights
     W = biased_weights(N_in, W_initial, bias, spread, true);
-    M = biased_weights(N_out, NaN, 0.05, 5, false);
+    M = biased_weights(N_out, NaN, 0.1, 10, false);
     
     % initialize activities
     in = zeros(N_in, 1);
@@ -42,6 +43,9 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     intrin_counter = round(exprnd(H_p * dt_per_ms, 1, N_out)) + 1;
     intrin_dur_counter = zeros(1, N_out);
     
+    active_counter = zeros(1, N_out);
+    refract_dur_counter = zeros(1, N_out);
+    
     record_counter = 1;
     plot_counter = 1;
 
@@ -50,7 +54,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     L_active_rate = []; H_active_rate = [];
     
     % initialize matrices for recording weights, output, theta
-    record_freq = 1;
+    record_freq = 0.05;
     fprintf(eventlog, 'record freq: every %.2f ms \n', record_freq);
     
     record_times_ms = [0 : record_freq : (total_ms * 0.2) ...
@@ -107,6 +111,8 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
             fire = intrin_counter == 0;
             num_of_fire = sum(fire);
             if num_of_fire > 0
+                fprintf(eventlog, '%d H \n', t);
+                
                 out_spon(fire) = H_amp;
                 intrin_dur_counter(fire) = round(normrnd(H_dur, H_dur * 0.1, 1, num_of_fire) * dt_per_ms);
                 intrin_counter(fire) = round(exprnd(H_p * dt_per_ms, 1, num_of_fire)) + ...
@@ -117,9 +123,18 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
         % output vector
         forward = W * in;
         recur_intrin = out_spon + M * out;
-        target = forward + recur_intrin;
-        % target = sigmoid(forward + recur_intrin, H_rate, H_rate / 2, H_rate / 8);
+        % target = forward + recur_intrin;
+        target = sigmoid(forward + recur_intrin, H_amp, H_amp / 2, H_amp / 8);
         out = out + (dt / tau_out) * (-out + target);
+        
+        out(refract_dur_counter > 0) = 0;
+        
+        active_counter(out > out_thres) = active_counter(out > out_thres) + 1;
+        active_counter(out <= out_thres) = 0;
+        
+        start_refract = active_counter == allowed_active_dur * dt_per_ms;
+        refract_dur_counter(start_refract) = refract_dur * dt_per_ms;
+        active_counter(start_refract) = 0;
         
         % different LRs
         switch type_id
@@ -151,9 +166,11 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
             
         % counter operations
         L_counter = L_counter - 1;
-        L_dur_counter = L_dur_counter -1;
+        L_dur_counter = L_dur_counter - 1;
         intrin_counter = intrin_counter - 1;
-        intrin_dur_counter = intrin_dur_counter -1;
+        intrin_dur_counter = intrin_dur_counter - 1;
+
+        refract_dur_counter = refract_dur_counter - 1;
         
         % end of events
         if L_dur_counter == 0
@@ -253,7 +270,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     text(0.1, 0.7, sprintf('L dur = %.2f ms', L_dur));
     text(0.5, 0.7, sprintf('H dur = %.2f ms', H_dur));
     text(0.1, 0.6, sprintf('L pct = %.2f - %.2f', L_pct(1), L_pct(2)));
-    text(0.5, 0.6, sprintf('H pct = %.2f - %.2f', H_pct(1), H_pct(2)));
+    % text(0.5, 0.6, sprintf('H pct = %.2f - %.2f', H_pct(1), H_pct(2)));
     text(0.1, 0.5, sprintf('bias = %.2f', bias));
     text(0.5, 0.5, sprintf('H amp = %.2f', H_amp));
     

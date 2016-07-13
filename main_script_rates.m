@@ -28,10 +28,14 @@ pot_dep_ratio = 1;
 
 % parameters for events
 L_dur = 0.15; H_dur = 0.05;
-L_p = 1.5; H_p = 5.0;
+L_p = 1.5; H_p = 200.0;
 
 L_pct = [0.2 0.6]; H_pct = NaN;
 H_amp = 3;
+
+% refractory parameters
+allowed_active_dur = L_dur;
+refract_dur = 0.10;
 
 % file naming
 folder_name = sprintf('../visual_images/%s', datestr(now, 'mmmdd'));
@@ -69,6 +73,7 @@ eventlog = fopen(sprintf('%s/eventlog.txt', subfolder_name), 'w');
         out_thres, W_thres, bounded, corr_thres, pot_dep_ratio, ...
         L_p, H_p, L_dur, H_dur, L_pct, H_pct, H_amp, ...
         tau_w, tau_out, tau_theta, ...
+        allowed_active_dur, refract_dur, ...
         summary_name, eventlog);
 
 % save data
@@ -79,5 +84,5 @@ save(theta_name, 'record_theta', 'record_times');
 
 fclose(eventlog);
 
-figure;
-phase(plot_W, corr_thres);
+% figure;
+% phase(plot_W, corr_thres);
