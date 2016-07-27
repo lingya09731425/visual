@@ -7,10 +7,10 @@ type = 'corr';
 N_in = 50; N_out = 50;
 
 % bias
-bias = 0.10;
+bias = 0.05;
 
 % time resolution
-total_ms = 8000;
+total_ms = 5000;
 dt_per_ms = 1000;
 
 % time constants
@@ -21,14 +21,18 @@ tau_theta = 10;
 % thresholds
 out_thres = 1.0;
 W_thres = [0.0 0.4]; bounded = true;
-corr_thres = 0.3;
+corr_thres = 0.30;
 pot_dep_ratio = 1;
 
 % parameters for events
 L_dur = 0.15; H_dur = 0.15;
-L_p = 1.5; H_p = 250.0;
+L_p = 1.5; H_p = 12.0;
 L_pct = [0.2 0.6];
-H_amp = 2.0;
+H_amp = 5.0;
+
+% refractory parameters
+allowed_active_dur = H_dur;
+refract_dur = 0.25;
 
 % file naming
 folder_name = sprintf('../visual_images/%s', datestr(now, 'mmmdd'));
@@ -66,6 +70,7 @@ eventlog = fopen(sprintf('%s/eventlog.txt', subfolder_name), 'w');
         out_thres, W_thres, bounded, corr_thres, pot_dep_ratio, ...
         L_p, H_p, L_dur, H_dur, L_pct, NaN, H_amp, ...
         tau_w, tau_out, tau_theta, ...
+        allowed_active_dur, refract_dur, ...
         summary_name, eventlog);
 
 % save data

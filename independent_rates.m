@@ -5,6 +5,7 @@ function [record_times_ms,record_W,record_output,record_theta,record_gaba,plot_t
         out_thres, W_thres, bounded, corr_thres, pot_dep_ratio, ...
         L_p, H_p, L_dur, H_dur, L_pct, ~, H_amp, ...
         tau_w, tau_out, tau_theta, ...
+        allowed_active_dur, refract_dur, ...
         summary_name, eventlog)
 
     switch type
@@ -27,11 +28,14 @@ function [record_times_ms,record_W,record_output,record_theta,record_gaba,plot_t
     % initialize weights
     W = biased_weights(N_in, [0.15 0.25], bias, 4, true);
     
-    rand_connect = reshape(randsample([0,1], N_out * N_out, true, [0.8,0.2]), [N_out,N_out]);
-    W_gaba = biased_weights(N_out, [0.7 0.9], 0, 4, true) .* round(rand(N_out));
+    % rand_connect = reshape(randsample([0,1], N_out * N_out, true, [0.8,0.2]), [N_out,N_out]);
+    % W_gaba = biased_weights(N_out, [0.7 0.9], 0, 4, true) .* rand_connect;
+    % W_gaba = zeros(N_out);
+    % W_gaba = biased_weights(N_out, [0 0], 0.15, 3, true);
+    W_gaba = 0.015 * ones(N_out);
     
-    M = biased_weights(N_out, NaN, NaN, 7, false);
-    M = M .* (1 - eye(N_out)) / 15;
+    M = rand(N_out) / 5;
+    M = M .* (1 - eye(N_out));
     
     % initialize activities
     in = zeros(N_in, 1);
@@ -46,6 +50,9 @@ function [record_times_ms,record_W,record_output,record_theta,record_gaba,plot_t
     
     intrin_counter = round(H_p * dt_per_ms * rand(1, N_out)) + 1;
     intrin_dur_counter = zeros(1, N_out);
+    
+    active_counter = zeros(1, N_out);
+    refract_dur_counter = zeros(1, N_out);
     
     record_counter = 1;
     plot_counter = 1;
@@ -100,11 +107,7 @@ function [record_times_ms,record_W,record_output,record_theta,record_gaba,plot_t
 
             L_dur_counter = round(normrnd(L_dur, L_dur * 0.1) * dt_per_ms);
             L_counter = round(exprnd(L_p * dt_per_ms)) + L_dur_counter;
-            
-%             if t > equi_t
-%                 event_recorder(W, in, gaba_spon, true);
-%             end
-            
+                        
             center = mod(L_start + round(L_length / 2), N_in);
             fprintf(eventlog, '%d L %d %d \n', t, center, L_length);
         end
@@ -113,7 +116,9 @@ function [record_times_ms,record_W,record_output,record_theta,record_gaba,plot_t
             fire = intrin_counter == 0;
             num_of_fire = sum(fire);
             if num_of_fire > 0
-                fprintf(eventlog, '%d H \n', t);
+                fprintf(eventlog, '%d H ', t);
+                fprintf(eventlog, '%d ', find(fire));
+                fprintf(eventlog, '\n');
                 gaba_spon(fire) = H_amp;
 
                 intrin_dur_counter(fire) = round(normrnd(H_dur, H_dur * 0.1, 1, num_of_fire) * dt_per_ms);
@@ -129,14 +134,24 @@ function [record_times_ms,record_W,record_output,record_theta,record_gaba,plot_t
         end
         
         % output vector
-        if t < equi_t
-            gaba = gaba + (dt / tau_out) * (-gaba + gaba_spon + M * gaba);
+        % if t < equi_t
+            target = sigmoid(gaba_spon + M * gaba, H_amp, 4, H_amp / 8);
+            gaba = gaba + (dt / tau_out) * (-gaba + target);
             out = out + (dt / tau_out) * (-out + W * in + W_gaba * gaba);
-        else
-            gaba = gaba + (dt / tau_out) * (-gaba + W_glut * out);
-            out = out + (dt / tau_out) * (-out + W * in + W_gaba * gaba);
-            out(out < 0) = 0;
-        end
+        % else
+        %    gaba = gaba + (dt / tau_out) * (-gaba + W_glut * out);
+        %    out = out + (dt / tau_out) * (-out + W * in + W_gaba * gaba);
+        %    out(out < 0) = 0;
+        % end
+        
+        gaba(refract_dur_counter > 0) = 0;
+        
+        active_counter(gaba > out_thres) = active_counter(gaba > out_thres) + 1;
+        active_counter(gaba <= out_thres) = 0;
+        
+        start_refract = active_counter == allowed_active_dur * dt_per_ms;
+        refract_dur_counter(start_refract) = refract_dur * dt_per_ms;
+        active_counter(start_refract) = 0;
         
         switch type_id
             case 0 % corr
@@ -170,6 +185,8 @@ function [record_times_ms,record_W,record_output,record_theta,record_gaba,plot_t
         L_dur_counter = L_dur_counter - 1;
         intrin_counter = intrin_counter - 1;
         intrin_dur_counter = intrin_dur_counter -1;
+        
+        refract_dur_counter = refract_dur_counter - 1;
         
         % end of events
         if L_dur_counter == 0
