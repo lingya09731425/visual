@@ -49,6 +49,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     L_active_pct = []; H_active_pct = [];
     L_active_rate = []; H_active_rate = [];
     
+    % DENSE RECORD
     % initialize matrices for recording weights, output, theta
     record_freq = 1;
     fprintf(eventlog, 'record freq: every %.2f ms \n', record_freq);
@@ -59,6 +60,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     record_times_dt = int32(record_times_ms * dt_per_ms);
     num_of_records = length(record_times_dt);
     
+    % to store data in integer format, multiply it by a factor
     data_multi = 1000;
     fprintf(eventlog, 'data multiplication factor: %d \n', data_multi);
     
@@ -69,6 +71,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
     record_theta = zeros(N_out, num_of_records, 'uint16');
     record_theta(:,1) = theta * data_multi;
     
+    % SPARSE RECORD
     % initialize matrices for summary plotting
     plot_W_freq = 50;
     
@@ -168,7 +171,7 @@ function [record_times_ms,record_W,record_output,record_theta,plot_times_ms,plot
             out_spon = zeros(N_out, 1);
         end
         
-        % record W, output, theta
+        % densely record W, output, theta
         if mod(t, record_freq * dt_per_ms) == 0 && ismember(t, record_times_dt)
             record_counter = record_counter + 1;
             

@@ -8,7 +8,7 @@ N_in = 50; N_out = 50;
 
 % initial weight and bias
 W_initial = [0.15 0.25];
-bias = 0.07;
+bias = 0.05;
 spread = 4;
 
 % time resolution
@@ -16,14 +16,14 @@ total_ms = 10000;
 dt_per_ms = 1000;
 
 % time constants
-tau_w = 500;
+tau_w = 250;
 tau_out = 0.01;
 tau_theta = 10;
 
 % thresholds
 out_thres = 1.0;
-W_thres = [0.0 0.4]; bounded = true;
-corr_thres = 0.7;
+W_thres = [0.0 10]; bounded = true;
+corr_thres = 0.3;
 pot_dep_ratio = 1;
 
 % parameters for events
